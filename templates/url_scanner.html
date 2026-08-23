@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>URL Scanner | PhishAI</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <h2>🛡️ PhishAI</h2>
+
+        <nav>
+            <a href="/">🏠 Dashboard</a>
+
+            <a href="/email-scanner">
+                📧 Email Scanner
+            </a>
+
+            <a href="/sms-scanner">
+                💬 SMS Scanner
+            </a>
+
+            <a
+                class="active"
+                href="/url-scanner"
+            >
+                🌐 URL Scanner
+            </a>
+
+            <a href="/history">
+                📊 Detection History
+            </a>
+
+            <a href="/awareness">
+                🧠 Awareness Centre
+            </a>
+
+            <a href="/report-scam">
+                🚩 Report Scam
+            </a>
+
+            <a href="/scam-reports">
+                📋 Reported Scams
+            </a>
+        </nav>
+
+        <div class="sidebar-user">
+
+            <div class="user-avatar">
+                {{ session.first_name[0]|upper }}
+            </div>
+
+            <div class="user-details">
+
+                <strong>
+                    {{ session.first_name }}
+                </strong>
+
+                <small>
+                    {{ session.role }}
+                </small>
+
+            </div>
+
+            <a
+                href="/logout"
+                class="logout-button"
+                title="Logout"
+            >
+                ↪
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <h1>URL Scanner</h1>
+
+            <span>
+                Analyse website URLs using machine learning
+                to detect potentially malicious websites.
+            </span>
+
+        </header>
+
+
+        <section class="scanner-grid">
+
+            <div class="scan-card url-scan-card">
+
+                <h2>Paste a Website URL</h2>
+
+                <p>
+                    PhishAI will analyse the structure and patterns
+                    of the URL and predict whether it is legitimate
+                    or malicious.
+                </p>
+
+                <form method="POST" class="url-scan-form">
+
+                    <div class="url-input-group">
+
+                        <label for="submitted_content">
+                            Website URL
+                        </label>
+
+                        <input
+                            type="text"
+                            id="submitted_content"
+                            name="submitted_content"
+                            class="url-input"
+                            maxlength="2048"
+                            placeholder="https://www.example.com"
+                            value="{{ result.submitted_content if result else '' }}"
+                            autocomplete="off"
+                            spellcheck="false"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-footer url-form-footer">
+
+                        <small>
+                            You may enter a URL with or without
+                            http:// or https://.
+                        </small>
+
+                        <button
+                            type="submit"
+                            class="scan-btn"
+                        >
+                            Analyse URL
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+
+            <div class="scan-help">
+
+                <div class="ai-graphic small">
+
+                    <div class="shield">
+                        🌐
+                    </div>
+
+                    <p>
+                        URL Threat Analysis
+                    </p>
+
+                </div>
+
+                <h3>Common warning signs</h3>
+
+                <ul>
+                    <li>
+                        Misspelled or unusual website names
+                    </li>
+
+                    <li>
+                        Unexpected account verification requests
+                    </li>
+
+                    <li>
+                        Login or banking pages from unknown websites
+                    </li>
+
+                    <li>
+                        An IP address instead of a normal domain
+                    </li>
+
+                    <li>
+                        Long or unusual URL structures
+                    </li>
+                </ul>
+
+            </div>
+
+        </section>
+
+
+        {% if result %}
+
+            {% if result.prediction == "Invalid URL" %}
+
+                <section
+                    class="result-panel"
+                    id="detection-result"
+                >
+
+                    <div class="result-header">
+
+                        <h2>Detection Result</h2>
+
+                        <span class="badge low">
+                            Invalid URL
+                        </span>
+
+                    </div>
+
+
+                    <div class="analysis-box invalid-url-box">
+
+                        <h3>
+                            ❌ Invalid Website URL
+                        </h3>
+
+                        <p>
+                            {{ result.validation_error }}
+                        </p>
+
+
+                        {% if result.reasons %}
+
+                            <ul>
+
+                                {% for reason in result.reasons %}
+
+                                    <li>
+                                        {{ reason }}
+                                    </li>
+
+                                {% endfor %}
+
+                            </ul>
+
+                        {% endif %}
+
+
+                        <h3>
+                            Examples of valid website URLs
+                        </h3>
+
+                        <ul>
+                            <li>www.google.com</li>
+                            <li>https://www.github.com</li>
+                            <li>microsoft.com</li>
+                        </ul>
+
+                    </div>
+
+                </section>
+
+
+            {% else %}
+
+                <section
+                    class="result-panel"
+                    id="detection-result"
+                >
+
+                    <div class="result-header">
+
+                        <h2>Detection Result</h2>
+
+                        <span
+                            class="badge {{ result.risk_level|lower }}"
+                        >
+                            {{ result.risk_level }} Risk
+                        </span>
+
+                    </div>
+
+
+                    <div class="result-cards url-result-cards">
+
+                        <div class="mini-card">
+
+                            <h3>
+                                Final Prediction
+                            </h3>
+
+                            <p
+                                class="{% if result.prediction == 'Malicious' %}prediction-danger{% else %}prediction-safe{% endif %}"
+                            >
+                                {{ result.prediction }}
+                            </p>
+
+                        </div>
+
+
+                        <div class="mini-card">
+
+                            <h3>
+                                Model Prediction
+                            </h3>
+
+                            <p>
+                                {{ result.model_display_prediction }}
+                            </p>
+
+                        </div>
+
+
+                        <div class="mini-card">
+
+                            <h3>
+                                Model Confidence
+                            </h3>
+
+                            <p>
+                                {{ result.model_confidence }}%
+                            </p>
+
+                        </div>
+
+
+                        <div class="mini-card">
+
+                            <h3>
+                                Decision Source
+                            </h3>
+
+                            <p class="decision-source">
+                                {{ result.decision_source }}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="model-confidence-container">
+
+                        <div class="risk-meter-header">
+
+                            <h3>
+                                Machine-Learning Confidence
+                            </h3>
+
+                            <span>
+                                {{ result.model_confidence }}%
+                            </span>
+
+                        </div>
+
+                        <p class="confidence-description">
+
+                            The model predicted
+
+                            <strong>
+                                {{ result.model_display_prediction }}
+                            </strong>
+
+                            with {{ result.model_confidence }}%
+                            confidence.
+
+                        </p>
+
+                        <div class="risk-bar">
+
+                            <div
+                                class="risk-fill
+                                {% if result.prediction == 'Malicious' %}
+                                    malicious-confidence-fill
+                                {% else %}
+                                    legitimate-confidence-fill
+                                {% endif %}"
+                                style="width: {{ result.model_confidence }}%"
+                            >
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="probability-grid">
+
+                        <div class="probability-card">
+
+                            <span>
+                                Legitimate Probability
+                            </span>
+
+                            <strong>
+                                {{ result.legitimate_probability }}%
+                            </strong>
+
+                        </div>
+
+                        <div class="probability-card">
+
+                            <span>
+                                Malicious Probability
+                            </span>
+
+                            <strong>
+                                {{ result.malicious_probability }}%
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    {% if result.url_segments %}
+
+                        <div class="url-analysis-section">
+
+                            <div class="url-analysis-heading">
+
+                                <h3>
+                                    🔍 AI URL Visual Analysis
+                                </h3>
+
+                                <p>
+                                    The URL below is the content analysed
+                                    by the trained model.
+                                </p>
+
+                            </div>
+
+
+                            <div
+                                class="url-visual-analysis
+                                {% if result.prediction == 'Malicious' %}
+                                    malicious-url-analysis
+                                {% else %}
+                                    legitimate-url-analysis
+                                {% endif %}"
+                            >
+
+                                {% for segment in result.url_segments %}
+
+                                    <div
+                                        class="url-segment {{ segment.type }}"
+                                        title="{{ segment.reason }}"
+                                    >
+
+                                        <span class="segment-text">
+                                            {{ segment.text }}
+                                        </span>
+
+                                    </div>
+
+                                {% endfor %}
+
+                            </div>
+
+
+                            <div class="url-analysis-legend">
+
+                                {% if result.prediction == "Malicious" %}
+
+                                    <div class="legend-item">
+
+                                        <span
+                                            class="legend-colour suspicious-colour"
+                                        >
+                                        </span>
+
+                                        Model detected malicious URL patterns
+
+                                    </div>
+
+                                {% else %}
+
+                                    <div class="legend-item">
+
+                                        <span
+                                            class="legend-colour safe-colour"
+                                        >
+                                        </span>
+
+                                        No strong malicious URL patterns detected
+
+                                    </div>
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    <div class="insight-grid">
+
+                        <div class="analysis-box">
+
+                            <h3>
+                                🧠 Why was it classified this way?
+                            </h3>
+
+                            {% if result.reasons %}
+
+                                <ul>
+
+                                    {% for reason in result.reasons %}
+
+                                        <li>
+                                            {{ reason }}
+                                        </li>
+
+                                    {% endfor %}
+
+                                </ul>
+
+                            {% else %}
+
+                                <p>
+                                    No additional explanation is available.
+                                </p>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="analysis-box">
+
+                            <h3>
+                                ✅ Recommended Action
+                            </h3>
+
+                            {% if result.actions %}
+
+                                <ul>
+
+                                    {% for action in result.actions %}
+
+                                        <li>
+                                            {{ action }}
+                                        </li>
+
+                                    {% endfor %}
+
+                                </ul>
+
+                            {% else %}
+
+                                <p>
+                                    Continue to exercise normal online
+                                    security precautions.
+                                </p>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        {% if result.warnings %}
+
+                            <div class="analysis-box security-warning-box">
+
+                                <h3>
+                                    ⚠ Security Warnings
+                                </h3>
+
+                                <ul>
+
+                                    {% for warning in result.warnings %}
+
+                                        <li>
+                                            {{ warning }}
+                                        </li>
+
+                                    {% endfor %}
+
+                                </ul>
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    {% if result.prediction != "Legitimate" %}
+
+                        <form
+                            method="POST"
+                            action="/report-scam"
+                            class="report-result-form"
+                        >
+
+                            <input
+                                type="hidden"
+                                name="submit_report"
+                                value="true"
+                            >
+
+                            <input
+                                type="hidden"
+                                name="report_type"
+                                value="URL"
+                            >
+
+                            <input
+                                type="hidden"
+                                name="reported_content"
+                                value="{{ result.submitted_content }}"
+                            >
+
+                            <button
+                                type="submit"
+                                class="report-btn"
+                            >
+                                🚩 Report This Website
+                            </button>
+
+                        </form>
+
+                    {% endif %}
+
+                </section>
+
+            {% endif %}
+
+        {% endif %}
+
+    </main>
+
+</div>
+
+
+{% if result %}
+
+<script>
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+
+            const resultSection =
+                document.getElementById(
+                    "detection-result"
+                );
+
+            if (resultSection) {
+
+                resultSection.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+
+            }
+
+        }
+    );
+
+</script>
+
+{% endif %}
+
+</body>
+
+</html>

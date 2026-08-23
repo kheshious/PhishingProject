@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ scanner_name }} | PhishAI</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <h2>🛡️ PhishAI</h2>
+
+        <nav>
+            <a href="/">🏠 Dashboard</a>
+            <a href="/email-scanner">📧 Email Scanner</a>
+            <a href="/sms-scanner">💬 SMS Scanner</a>
+            <a href="/url-scanner">🌐 URL Scanner</a>
+            <a href="/history">📊 Detection History</a>
+            <a href="/awareness">🧠 Awareness Centre</a>
+            <a href="/report-scam">🚩 Report Scam</a>
+            <a href="/scam-reports">📋 Reported Scams</a>
+        </nav>
+        <div class="sidebar-user">
+
+                <div class="user-avatar">
+                    {{ session.first_name[0]|upper }}
+                </div>
+
+                <div class="user-details">
+                    <strong>{{ session.first_name }}</strong>
+                    <small>{{ session.role }}</small>
+                </div>
+
+                <a href="/logout"
+                class="logout-button"
+                title="Logout">
+                    ↪
+                </a>
+
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="topbar">
+            <h1>{{ scanner_name }}</h1>
+            <span>Model development in progress</span>
+        </header>
+
+        <section class="coming-soon-card">
+
+            <div class="coming-icon">🧠</div>
+
+            <h2>{{ scanner_name }} is being prepared</h2>
+
+            <p>{{ message }}</p>
+
+            <a href="/sms-scanner" class="primary-link">
+                Use the SMS Scanner
+            </a>
+
+        </section>
+
+    </main>
+</div>
+
+</body>
+</html>

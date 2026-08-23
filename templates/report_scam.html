@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Report Scam</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+<div class="layout">
+
+    <aside class="sidebar">
+        <h2>🛡️ PhishAI</h2>
+        <nav>
+            <a href="/logout" class="logout-link">🚪 Logout</a>
+            <a href="/">🏠 Dashboard</a>
+            <a href="/email-scanner">📧 Email Scanner</a>
+            <a href="/sms-scanner">💬 SMS Scanner</a>
+            <a href="/url-scanner">🌐 URL Scanner</a>
+            <a href="/history">📊 Detection History</a>
+            <a href="/awareness">🧠 Awareness Centre</a>
+            <a class="active" href="/report-scam">🚩 Report Scam</a>
+            <a href="#">⚙️ Settings</a>
+        </nav>
+        <div class="sidebar-user">
+
+                <div class="user-avatar">
+                    {{ session.first_name[0]|upper }}
+                </div>
+
+                <div class="user-details">
+                    <strong>{{ session.first_name }}</strong>
+                    <small>{{ session.role }}</small>
+                </div>
+
+                <a href="/logout"
+                class="logout-button"
+                title="Logout">
+                    ↪
+                </a>
+
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="topbar">
+            <h1>Report Scam</h1>
+            <span>Submit suspicious emails, SMS messages or URLs for record keeping</span>
+        </header>
+
+        {% if success %}
+        <div class="success-message">
+            Scam report submitted successfully.
+        </div>
+        {% endif %}
+
+        <section class="scan-card">
+            <h2>Submit a Scam Report</h2>
+            <p>This helps keep a record of suspicious content and can support future model improvement.</p>
+
+            <form method="POST">
+
+                <input type="hidden" name="submit_report" value="true">
+
+                <label>Report Type</label>
+
+                <select name="report_type" required>
+                    <option value="Email"
+                        {% if report_type == "Email" %}selected{% endif %}>
+                        Email
+                    </option>
+
+                    <option value="SMS"
+                        {% if report_type == "SMS" %}selected{% endif %}>
+                        SMS
+                    </option>
+
+                    <option value="URL"
+                        {% if report_type == "URL" %}selected{% endif %}>
+                        URL
+                    </option>
+                </select>
+
+                <label>Reported Content</label>
+
+                <textarea
+                    name="reported_content"
+                    rows="7"
+                    placeholder="Paste the suspicious content here..."
+                    required>{{ reported_content }}</textarea>
+
+                <label>Description</label>
+
+                <textarea
+                    name="description"
+                    rows="4"
+                    placeholder="Explain why you believe this content is a scam.">{{ description }}</textarea>
+
+                <button type="submit" class="scan-btn">
+                    Submit Report
+                </button>
+
+            </form>
+        </section>
+
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,814 @@
+<section
+    class="interactive-lesson-shell"
+    id="interactiveLessonShell"
+    data-module-id="{{ module.module_id }}"
+>
+
+    {% if lessons %}
+
+        <div class="lesson-progress-header">
+
+            <div>
+                <span class="lesson-progress-label">
+                    MODULE PROGRESS
+                </span>
+
+                <strong id="lessonCounter">
+                    Lesson 1 of {{ total_lessons }}
+                </strong>
+            </div>
+
+            <div class="lesson-progress-percentage">
+                <span id="lessonProgressPercentage">
+                    0%
+                </span>
+            </div>
+
+        </div>
+
+
+        <div class="lesson-progress-track">
+
+            <div
+                id="lessonProgressFill"
+                class="lesson-progress-fill"
+            ></div>
+
+        </div>
+
+
+        <div class="lesson-step-indicators">
+
+            {% for lesson in lessons %}
+
+                <span
+                    class="lesson-step
+                    {% if lesson.completed %}
+                        completed
+                    {% endif %}"
+                    data-lesson-step="{{ loop.index0 }}"
+                >
+                    {{ loop.index }}
+                </span>
+
+            {% endfor %}
+
+        </div>
+
+
+        {% for lesson in lessons %}
+
+            <section
+                class="interactive-lesson-screen"
+                data-lesson-index="{{ loop.index0 }}"
+                data-lesson-id="{{ lesson.lesson_id }}"
+                data-completed="{% if lesson.completed %}1{% else %}0{% endif %}"
+                {% if not loop.first %}
+                    hidden
+                {% endif %}
+            >
+
+                <div class="lesson-learning-layout">
+
+
+                    <div class="lesson-visual-panel">
+
+                        {% if loop.index == 1 %}
+
+                            <div class="lesson-graphic">
+                                ✉️
+                            </div>
+
+                            <span class="lesson-visual-tag">
+                                EMAIL PHISHING
+                            </span>
+
+                            <h3>
+                                Understand the Threat
+                            </h3>
+
+                            <p>
+                                Learn how phishing emails are designed
+                                to imitate trusted people and organisations.
+                            </p>
+
+
+                        {% elif loop.index == 2 %}
+
+                            <div class="lesson-graphic">
+                                🚨
+                            </div>
+
+                            <span class="lesson-visual-tag">
+                                WARNING SIGNS
+                            </span>
+
+                            <h3>
+                                Spot the Red Flags
+                            </h3>
+
+                            <p>
+                                Learn which characteristics should make
+                                you cautious when reading an email.
+                            </p>
+
+
+                        {% elif loop.index == 3 %}
+
+                            <div class="lesson-graphic">
+                                ⏱️
+                            </div>
+
+                            <span class="lesson-visual-tag">
+                                SOCIAL ENGINEERING
+                            </span>
+
+                            <h3>
+                                Urgency and Pressure
+                            </h3>
+
+                            <p>
+                                Understand why attackers want you to
+                                react quickly instead of thinking carefully.
+                            </p>
+
+
+                        {% elif loop.index == 4 %}
+
+                            <div class="lesson-graphic">
+                                🔍
+                            </div>
+
+                            <span class="lesson-visual-tag">
+                                SAFE VERIFICATION
+                            </span>
+
+                            <h3>
+                                Verify Before You Trust
+                            </h3>
+
+                            <p>
+                                Learn how to confirm unexpected requests
+                                through trusted communication channels.
+                            </p>
+
+
+                        {% else %}
+
+                            <div class="lesson-graphic">
+                                🛡️
+                            </div>
+
+                            <span class="lesson-visual-tag">
+                                SAFE RESPONSE
+                            </span>
+
+                            <h3>
+                                Protect Yourself
+                            </h3>
+
+                            <p>
+                                Learn what to do when you believe an
+                                email is fraudulent.
+                            </p>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="lesson-reading-panel">
+
+                        <div class="lesson-number-pill">
+                            Lesson {{ loop.index }}
+                        </div>
+
+                        <h2>
+                            {{ lesson.title }}
+                        </h2>
+
+
+                        <div class="lesson-reading-content">
+
+                            <p>
+                                {{ lesson.lesson_content }}
+                            </p>
+
+                        </div>
+
+
+                        <div
+                            class="lesson-complete-status
+                            {% if lesson.completed %}
+                                completed
+                            {% endif %}"
+                        >
+
+                            {% if lesson.completed %}
+
+                                ✓ Lesson completed
+
+                            {% else %}
+
+                                Read this lesson before continuing.
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        {% endfor %}
+
+
+        <div class="interactive-lesson-navigation">
+
+            <button
+                type="button"
+                id="previousLessonButton"
+                class="quiz-navigation-secondary"
+            >
+                ← Previous Lesson
+            </button>
+
+
+            <span class="lesson-navigation-note">
+                Your progress is saved automatically.
+            </span>
+
+
+            <button
+                type="button"
+                id="nextLessonButton"
+                class="quiz-navigation-primary"
+            >
+                Complete & Continue →
+            </button>
+
+
+            <a
+                id="takeQuizButton"
+                href="{{ url_for(
+                    'module_quiz',
+                    module_id=module.module_id
+                ) }}"
+                class="quiz-submit-final"
+                {% if not all_lessons_completed %}
+                    hidden
+                {% endif %}
+            >
+                Take Module Quiz →
+            </a>
+
+        </div>
+
+
+    {% else %}
+
+        <div class="empty-learning-state">
+
+            <div class="empty-learning-icon">
+                📚
+            </div>
+
+            <h3>
+                Lessons are being prepared
+            </h3>
+
+            <p>
+                This module does not yet contain lesson content.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</section>
+
+
+{% if lessons %}
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const shell =
+        document.getElementById(
+            "interactiveLessonShell"
+        );
+
+    if (!shell) {
+        return;
+    }
+
+
+    const moduleId =
+        shell.dataset.moduleId;
+
+
+    const screens =
+        Array.from(
+            document.querySelectorAll(
+                ".interactive-lesson-screen"
+            )
+        );
+
+
+    const steps =
+        Array.from(
+            document.querySelectorAll(
+                ".lesson-step"
+            )
+        );
+
+
+    const previousButton =
+        document.getElementById(
+            "previousLessonButton"
+        );
+
+
+    const nextButton =
+        document.getElementById(
+            "nextLessonButton"
+        );
+
+
+    const quizButton =
+        document.getElementById(
+            "takeQuizButton"
+        );
+
+
+    const counter =
+        document.getElementById(
+            "lessonCounter"
+        );
+
+
+    const progressText =
+        document.getElementById(
+            "lessonProgressPercentage"
+        );
+
+
+    const progressFill =
+        document.getElementById(
+            "lessonProgressFill"
+        );
+
+
+    let currentLesson = 0;
+
+    const totalLessons =
+        screens.length;
+
+
+    function getCompletedCount() {
+
+        return screens.filter(
+            function (screen) {
+
+                return (
+                    screen.dataset.completed
+                    === "1"
+                );
+
+            }
+        ).length;
+
+    }
+
+
+    function updateProgress() {
+
+        const completed =
+            getCompletedCount();
+
+
+        const percentage =
+            totalLessons > 0
+                ? (
+                    completed
+                    / totalLessons
+                ) * 100
+                : 0;
+
+
+        progressText.textContent =
+            Math.round(
+                percentage
+            ) + "%";
+
+
+        progressFill.style.width =
+            percentage + "%";
+
+
+        steps.forEach(
+            function (
+                step,
+                index
+            ) {
+
+                if (
+                    screens[index]
+                    &&
+                    screens[index]
+                        .dataset
+                        .completed
+                    === "1"
+                ) {
+
+                    step.classList.add(
+                        "completed"
+                    );
+
+                }
+
+            }
+        );
+
+
+        if (
+            completed ===
+            totalLessons
+        ) {
+
+            quizButton.hidden =
+                false;
+
+        }
+
+    }
+
+
+    function showLesson(index) {
+
+        screens.forEach(
+            function (
+                screen,
+                screenIndex
+            ) {
+
+                screen.hidden =
+                    screenIndex !== index;
+
+            }
+        );
+
+
+        steps.forEach(
+            function (
+                step,
+                stepIndex
+            ) {
+
+                step.classList.remove(
+                    "active"
+                );
+
+
+                if (
+                    stepIndex === index
+                ) {
+
+                    step.classList.add(
+                        "active"
+                    );
+
+                }
+
+            }
+        );
+
+
+        counter.textContent =
+            "Lesson "
+            + (index + 1)
+            + " of "
+            + totalLessons;
+
+
+        if (
+            index === 0
+        ) {
+
+            previousButton.style.visibility =
+                "hidden";
+
+        } else {
+
+            previousButton.style.visibility =
+                "visible";
+
+        }
+
+
+        if (
+            index ===
+            totalLessons - 1
+        ) {
+
+            nextButton.textContent =
+                "Complete Lesson ✓";
+
+        } else {
+
+            nextButton.textContent =
+                "Complete & Continue →";
+
+        }
+
+
+        updateProgress();
+
+    }
+
+
+    async function markCurrentLessonComplete() {
+
+        const currentScreen =
+            screens[
+                currentLesson
+            ];
+
+
+        if (!currentScreen) {
+            return false;
+        }
+
+
+        if (
+            currentScreen
+                .dataset
+                .completed
+            === "1"
+        ) {
+
+            return true;
+
+        }
+
+
+        const lessonId =
+            currentScreen
+                .dataset
+                .lessonId;
+
+
+        const completeUrl =
+            "/learning/module/"
+            + moduleId
+            + "/lesson/"
+            + lessonId
+            + "/complete";
+
+
+        try {
+
+            const response =
+                await fetch(
+                    completeUrl,
+                    {
+                        method: "POST",
+                        headers: {
+                            "X-Requested-With":
+                                "XMLHttpRequest"
+                        }
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                console.error(
+                    "Server returned:",
+                    response.status
+                );
+
+                return false;
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                !data
+                ||
+                data.success !== true
+            ) {
+
+                console.error(
+                    "Unexpected response:",
+                    data
+                );
+
+                return false;
+
+            }
+
+
+            currentScreen
+                .dataset
+                .completed =
+                "1";
+
+
+            if (
+                steps[
+                    currentLesson
+                ]
+            ) {
+
+                steps[
+                    currentLesson
+                ].classList.add(
+                    "completed"
+                );
+
+            }
+
+
+            const status =
+                currentScreen.querySelector(
+                    ".lesson-complete-status"
+                );
+
+
+            if (status) {
+
+                status.classList.add(
+                    "completed"
+                );
+
+                status.textContent =
+                    "✓ Lesson completed";
+
+            }
+
+
+            updateProgress();
+
+
+            return true;
+
+
+        } catch (error) {
+
+            console.error(
+                "Lesson progress save failed:",
+                error
+            );
+
+
+            return false;
+
+        }
+
+    }
+
+
+    nextButton.addEventListener(
+        "click",
+        async function () {
+
+            nextButton.disabled =
+                true;
+
+
+            const saved =
+                await markCurrentLessonComplete();
+
+
+            nextButton.disabled =
+                false;
+
+
+            if (!saved) {
+
+                alert(
+                    "Your lesson progress could not be saved. Please try again."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                currentLesson
+                <
+                totalLessons - 1
+            ) {
+
+                currentLesson++;
+
+
+                showLesson(
+                    currentLesson
+                );
+
+
+            } else {
+
+                nextButton.hidden =
+                    true;
+
+
+                quizButton.hidden =
+                    false;
+
+
+                updateProgress();
+
+            }
+
+        }
+    );
+
+
+    previousButton.addEventListener(
+        "click",
+        function () {
+
+            if (
+                currentLesson > 0
+            ) {
+
+                currentLesson--;
+
+
+                showLesson(
+                    currentLesson
+                );
+
+            }
+
+        }
+    );
+
+
+    steps.forEach(
+        function (
+            step,
+            index
+        ) {
+
+            step.addEventListener(
+                "click",
+                function () {
+
+                    if (
+                        index <= currentLesson
+                        ||
+                        (
+                            screens[
+                                index
+                            ]
+                            &&
+                            screens[
+                                index
+                            ]
+                                .dataset
+                                .completed
+                            === "1"
+                        )
+                    ) {
+
+                        currentLesson =
+                            index;
+
+
+                        showLesson(
+                            currentLesson
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+
+    showLesson(
+        currentLesson
+    );
+
+
+    updateProgress();
+
+});
+
+</script>
+
+{% endif %}

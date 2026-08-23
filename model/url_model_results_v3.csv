@@ -1,0 +1,4 @@
+Model,Validation Accuracy,Validation Precision,Validation Recall,Validation F1,Training Time Seconds
+Logistic Regression,0.9011,0.9147,0.8848,0.8995,97.91
+XGBoost,0.8911,0.8926,0.8892,0.8909,1161.19
+Random Forest,0.892,0.9025,0.8789,0.8905,138.21

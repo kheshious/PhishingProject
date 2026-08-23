@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Awareness Centre | PhishAI</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <h2>🛡️ PhishAI</h2>
+
+        <nav>
+
+            <a href="/">
+                🏠 Dashboard
+            </a>
+
+            <a href="/email-scanner">
+                📧 Email Scanner
+            </a>
+
+            <a href="/sms-scanner">
+                💬 SMS Scanner
+            </a>
+
+            <a href="/url-scanner">
+                🌐 URL Scanner
+            </a>
+
+            <a href="/history">
+                📊 Detection History
+            </a>
+
+            <a
+                href="/awareness"
+                class="active"
+            >
+                🧠 Awareness Centre
+            </a>
+
+            <a href="/report-scam">
+                🚩 Report Scam
+            </a>
+
+            <a href="/scam-reports">
+                📋 Reported Scams
+            </a>
+
+        </nav>
+
+        <div class="sidebar-user">
+
+            <div class="user-avatar">
+                {{ session.first_name[0]|upper }}
+            </div>
+
+            <div class="user-details">
+
+                <strong>
+                    {{ session.first_name }}
+                </strong>
+
+                <small>
+                    {{ session.role }}
+                </small>
+
+            </div>
+
+            <a
+                href="/logout"
+                class="logout-button"
+                title="Logout"
+            >
+                ↪
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <h1>
+                Awareness Centre
+            </h1>
+
+            <span>
+                Learn how to recognise scams, understand warning signs
+                and protect yourself online.
+            </span>
+
+        </header>
+
+
+        <section class="learning-summary">
+
+            <div class="learning-summary-content">
+
+                <div>
+
+                    <span class="learning-eyebrow">
+                        YOUR LEARNING
+                    </span>
+
+                    <h2>
+                        Build Your Fraud Awareness
+                    </h2>
+
+                    <p>
+                        Complete learning modules and quizzes to improve
+                        your ability to identify phishing, smishing,
+                        malicious URLs and other forms of online fraud.
+                    </p>
+
+                </div>
+
+
+                <div class="awareness-score-card">
+
+                    <span>
+                        Awareness Score
+                    </span>
+
+                    <strong>
+                        {{ awareness_score }}%
+                    </strong>
+
+                    <small>
+                        Based on your best quiz results
+                    </small>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="learning-section">
+
+            <div class="learning-section-heading">
+
+                <div>
+
+                    <h2>
+                        Learning Modules
+                    </h2>
+
+                    <p>
+                        Choose a topic to start learning.
+                    </p>
+
+                </div>
+
+                <div class="module-count">
+                    {{ modules|length }} Modules
+                </div>
+
+            </div>
+
+
+            <div class="learning-module-grid">
+
+                {% for module in modules %}
+
+                    <article class="learning-module-card">
+
+                        <div class="module-top-row">
+
+                            <div class="module-icon">
+                                {{ module.icon }}
+                            </div>
+
+                            {% if module.module_completed %}
+
+                                <span class="module-status completed">
+                                    ✓ Completed
+                                </span>
+
+                            {% elif module.lessons_completed > 0 %}
+
+                                <span class="module-status progress">
+                                    In Progress
+                                </span>
+
+                            {% else %}
+
+                                <span class="module-status not-started">
+                                    Not Started
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <span class="module-category">
+                            {{ module.category }}
+                        </span>
+
+                        <h3>
+                            {{ module.title }}
+                        </h3>
+
+                        <p>
+                            {{ module.description }}
+                        </p>
+
+
+                        <div class="module-stat-row">
+
+                            <div>
+
+                                <span>
+                                    Lessons
+                                </span>
+
+                                <strong>
+                                    {{ module.lesson_count }}
+                                </strong>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Completed
+                                </span>
+
+                                <strong>
+                                    {{ module.lessons_completed }}
+                                </strong>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Best Quiz
+                                </span>
+
+                                <strong>
+                                    {{ module.best_quiz_score }}%
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        {% if module.lesson_count > 0 %}
+
+                            {% set progress = (
+                                module.lessons_completed
+                                / module.lesson_count
+                                * 100
+                            ) %}
+
+                        {% else %}
+
+                            {% set progress = 0 %}
+
+                        {% endif %}
+
+
+                        <div class="module-progress">
+
+                            <div class="module-progress-header">
+
+                                <span>
+                                    Progress
+                                </span>
+
+                                <span>
+                                    {{ progress|round|int }}%
+                                </span>
+
+                            </div>
+
+
+                            <div class="module-progress-bar">
+
+                                <div
+                                    class="module-progress-fill"
+                                    style="width: {{ progress }}%"
+                                >
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <a
+                            href="{{ url_for(
+                                'learning_module',
+                                module_id=module.module_id
+                            ) }}"
+                            class="module-action"
+                        >
+
+                            {% if module.module_completed %}
+
+                                Review Module
+
+                            {% elif module.lessons_completed > 0 %}
+
+                                Continue Learning
+
+                            {% else %}
+
+                                Start Learning
+
+                            {% endif %}
+
+                            →
+
+                        </a>
+
+                    </article>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+
+</html>

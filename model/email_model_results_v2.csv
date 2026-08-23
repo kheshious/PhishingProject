@@ -1,0 +1,5 @@
+Model,Validation Accuracy,Validation Precision,Validation Recall,Validation F1,Training Time Seconds
+Naive Bayes,0.9946,1.0,0.9892,0.9946,0.01
+Random Forest,0.9892,0.9892,0.9892,0.9892,0.91
+Logistic Regression,0.9892,1.0,0.9784,0.9891,0.09
+XGBoost,0.9784,0.989,0.9676,0.9781,13.08

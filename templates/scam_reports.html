@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reported Scams</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <h2>🛡️ PhishAI</h2>
+
+        <nav>
+            <div class="sidebar-user">
+
+                <div class="user-avatar">
+                    {{ session.first_name[0]|upper }}
+                </div>
+
+                <div class="user-details">
+                    <strong>{{ session.first_name }}</strong>
+                    <small>{{ session.role }}</small>
+                </div>
+
+                <a href="/logout"
+                class="logout-button"
+                title="Logout">
+                    ↪
+                </a>
+
+            </div>
+            <a href="/">🏠 Dashboard</a>
+            <a href="/email-scanner">📧 Email Scanner</a>
+            <a href="/sms-scanner">💬 SMS Scanner</a>
+            <a href="/url-scanner">🌐 URL Scanner</a>
+            <a href="/history">📊 Detection History</a>
+            <a href="/awareness">🧠 Awareness Centre</a>
+            <a href="/report-scam">🚩 Report Scam</a>
+            <a class="active" href="/scam-reports">📋 Reported Scams</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="topbar">
+            <h1>Reported Scams</h1>
+            <span>View suspicious content reported through the platform</span>
+        </header>
+
+        <section class="filter-panel">
+            <input
+                type="text"
+                id="reportSearch"
+                placeholder="Search reported content...">
+
+            <select id="reportTypeFilter">
+                <option value="">All Types</option>
+                <option value="Email">Email</option>
+                <option value="SMS">SMS</option>
+                <option value="URL">URL</option>
+            </select>
+
+            <select id="statusFilter">
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Reviewed">Reviewed</option>
+                <option value="Confirmed Scam">Confirmed Scam</option>
+                <option value="Not a Scam">Not a Scam</option>
+            </select>
+        </section>
+
+        <table class="history-table" id="reportsTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Reported Content</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.report_date }}</td>
+                    <td>{{ report.report_type }}</td>
+                    <td>{{ report.reported_content }}</td>
+                    <td>{{ report.description or "No description" }}</td>
+                    <td>
+                    <form
+                        method="POST"
+                        action="/scam-reports/{{ report.report_id }}/status"
+                        class="status-form">
+
+                        <select name="status" class="status-select">
+
+                            <option value="Pending"
+                                {% if report.status == "Pending" %}selected{% endif %}>
+                                Pending
+                            </option>
+
+                            <option value="Reviewed"
+                                {% if report.status == "Reviewed" %}selected{% endif %}>
+                                Reviewed
+                            </option>
+
+                            <option value="Confirmed Scam"
+                                {% if report.status == "Confirmed Scam" %}selected{% endif %}>
+                                Confirmed Scam
+                            </option>
+
+                            <option value="Not a Scam"
+                                {% if report.status == "Not a Scam" %}selected{% endif %}>
+                                Not a Scam
+                            </option>
+
+                        </select>
+
+                        <button type="submit" class="small-btn">
+                            Update
+                        </button>
+
+                    </form>
+                </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </main>
+</div>
+
+<script>
+const reportSearch = document.getElementById("reportSearch");
+const reportTypeFilter = document.getElementById("reportTypeFilter");
+const statusFilter = document.getElementById("statusFilter");
+const tableRows = document.querySelectorAll("#reportsTable tbody tr");
+
+function filterReports() {
+    const searchValue = reportSearch.value.toLowerCase();
+    const typeValue = reportTypeFilter.value;
+    const statusValue = statusFilter.value;
+
+    tableRows.forEach(row => {
+        const type = row.cells[1].textContent.trim();
+        const content = row.cells[2].textContent.toLowerCase();
+        const description = row.cells[3].textContent.toLowerCase();
+        const status = row.cells[4].textContent.trim();
+
+        const matchesSearch =
+            content.includes(searchValue) ||
+            description.includes(searchValue);
+
+        const matchesType =
+            typeValue === "" || type === typeValue;
+
+        const matchesStatus =
+            statusValue === "" || status === statusValue;
+
+        row.style.display =
+            matchesSearch && matchesType && matchesStatus
+                ? ""
+                : "none";
+    });
+}
+
+reportSearch.addEventListener("keyup", filterReports);
+reportTypeFilter.addEventListener("change", filterReports);
+statusFilter.addEventListener("change", filterReports);
+</script>
+
+</body>
+</html>

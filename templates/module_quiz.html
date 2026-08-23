@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ module.title }} Quiz | PhishAI</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <h2>🛡️ PhishAI</h2>
+
+        <nav>
+            <a href="/">🏠 Dashboard</a>
+            <a href="/email-scanner">📧 Email Scanner</a>
+            <a href="/sms-scanner">💬 SMS Scanner</a>
+            <a href="/url-scanner">🌐 URL Scanner</a>
+            <a href="/history">📊 Detection History</a>
+
+            <a
+                href="/awareness"
+                class="active"
+            >
+                🧠 Awareness Centre
+            </a>
+
+            <a href="/report-scam">
+                🚩 Report Scam
+            </a>
+
+            <a href="/scam-reports">
+                📋 Reported Scams
+            </a>
+        </nav>
+
+        <div class="sidebar-user">
+
+            <div class="user-avatar">
+                {{ session.first_name[0]|upper }}
+            </div>
+
+            <div class="user-details">
+                <strong>
+                    {{ session.first_name }}
+                </strong>
+
+                <small>
+                    {{ session.role }}
+                </small>
+            </div>
+
+            <a
+                href="/logout"
+                class="logout-button"
+                title="Logout"
+            >
+                ↪
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <main class="main-content">
+
+        <header class="topbar quiz-page-header">
+
+            <div>
+
+                <a
+                    href="{{ url_for(
+                        'learning_module',
+                        module_id=module.module_id
+                    ) }}"
+                    class="learning-back-link"
+                >
+                    ← Back to Module
+                </a>
+
+                <h1>
+                    {{ module.icon }}
+                    {{ module.title }} Challenge
+                </h1>
+
+                <span>
+                    Put your fraud-awareness knowledge to the test.
+                </span>
+
+            </div>
+
+
+            <div class="quiz-header-badge">
+                🏆 Knowledge Challenge
+            </div>
+
+        </header>
+
+
+        {% if questions %}
+
+        <section class="interactive-quiz-shell">
+
+            <div class="quiz-progress-panel">
+
+                <div class="quiz-progress-top">
+
+                    <div>
+
+                        <span class="quiz-progress-label">
+                            YOUR PROGRESS
+                        </span>
+
+                        <strong id="questionCounter">
+                            Question 1 of {{ questions|length }}
+                        </strong>
+
+                    </div>
+
+                    <div class="quiz-progress-percentage">
+                        <span id="progressPercentage">
+                            20%
+                        </span>
+                    </div>
+
+                </div>
+
+
+                <div class="interactive-progress-track">
+
+                    <div
+                        id="quizProgressFill"
+                        class="interactive-progress-fill"
+                    >
+                    </div>
+
+                </div>
+
+
+                <div class="quiz-dots">
+
+                    {% for question in questions %}
+
+                        <span
+                            class="quiz-dot {% if loop.first %}active{% endif %}"
+                            data-dot-index="{{ loop.index0 }}"
+                        >
+                            {{ loop.index }}
+                        </span>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+
+            <form
+                id="interactiveQuizForm"
+                method="POST"
+                action="{{ url_for(
+                    'submit_module_quiz',
+                    module_id=module.module_id
+                ) }}"
+            >
+
+                {% for question in questions %}
+
+                <section
+                    class="interactive-question-screen"
+                    data-question-index="{{ loop.index0 }}"
+                    {% if not loop.first %}
+                        hidden
+                    {% endif %}
+                >
+
+                    <div class="quiz-question-layout">
+
+
+                        <div class="quiz-scenario-panel">
+
+
+                            {% if loop.index == 1 %}
+
+                                <div class="scenario-graphic email-threat-graphic">
+
+                                    <div class="fake-email-window">
+
+                                        <div class="fake-email-topbar">
+
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+
+                                        </div>
+
+                                        <div class="fake-email-envelope">
+                                            ✉️
+                                        </div>
+
+                                        <div class="fake-email-lines">
+
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+
+                                        </div>
+
+                                        <div class="fake-email-alert">
+                                            !
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                <span class="scenario-tag">
+                                    EMAIL THREAT
+                                </span>
+
+                                <h3>
+                                    Phishing Intent
+                                </h3>
+
+                                <p>
+                                    Think about what an attacker is
+                                    ultimately trying to achieve when
+                                    sending a phishing email.
+                                </p>
+
+
+                            {% elif loop.index == 2 %}
+
+                                <div class="scenario-graphic warning-sign-graphic">
+
+                                    <div class="warning-mail">
+                                        ✉️
+                                    </div>
+
+                                    <div class="warning-triangle">
+                                        !
+                                    </div>
+
+                                    <div class="warning-link">
+                                        🔗
+                                    </div>
+
+                                </div>
+
+                                <span class="scenario-tag">
+                                    WARNING SIGNS
+                                </span>
+
+                                <h3>
+                                    Spot the Red Flag
+                                </h3>
+
+                                <p>
+                                    Suspicious messages often contain
+                                    clues. Which behaviour should make
+                                    you more cautious?
+                                </p>
+
+
+                            {% elif loop.index == 3 %}
+
+                                <div class="scenario-graphic verified-site-graphic">
+
+                                    <div class="browser-frame">
+
+                                        <div class="browser-bar">
+
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+
+                                        </div>
+
+                                        <div class="browser-lock">
+                                            🔒
+                                        </div>
+
+                                        <div class="browser-check">
+                                            ✓
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                <span class="scenario-tag">
+                                    SAFE VERIFICATION
+                                </span>
+
+                                <h3>
+                                    Verify Before You Trust
+                                </h3>
+
+                                <p>
+                                    Imagine receiving an unexpected
+                                    account warning. What is the safest
+                                    way to verify it?
+                                </p>
+
+
+                            {% elif loop.index == 4 %}
+
+                                <div class="scenario-graphic urgency-graphic">
+
+                                    <div class="urgency-clock">
+                                        ⏱️
+                                    </div>
+
+                                    <div class="urgency-message">
+                                        ACT NOW!
+                                    </div>
+
+                                    <div class="urgency-alert">
+                                        ⚠
+                                    </div>
+
+                                </div>
+
+                                <span class="scenario-tag">
+                                    SOCIAL ENGINEERING
+                                </span>
+
+                                <h3>
+                                    Pressure & Urgency
+                                </h3>
+
+                                <p>
+                                    Attackers often create artificial
+                                    pressure. Think about why urgency
+                                    is such an effective tactic.
+                                </p>
+
+
+                            {% else %}
+
+                                <div class="scenario-graphic report-graphic">
+
+                                    <div class="report-shield">
+                                        🛡️
+                                    </div>
+
+                                    <div class="report-flag">
+                                        🚩
+                                    </div>
+
+                                    <div class="report-check">
+                                        ✓
+                                    </div>
+
+                                </div>
+
+                                <span class="scenario-tag">
+                                    SAFE RESPONSE
+                                </span>
+
+                                <h3>
+                                    Respond Safely
+                                </h3>
+
+                                <p>
+                                    You believe a message is phishing.
+                                    What should your next action be?
+                                </p>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="quiz-question-panel">
+
+                            <div class="question-top-row">
+
+                                <span class="question-number-pill">
+                                    Question {{ loop.index }}
+                                </span>
+
+                                <span class="question-category-pill">
+                                    {{ module.category }}
+                                </span>
+
+                            </div>
+
+
+                            <h2>
+                                {{ question.question_text }}
+                            </h2>
+
+
+                            <p class="question-instruction">
+                                Select the best answer.
+                            </p>
+
+
+                            <div class="creative-option-list">
+
+                                <label class="creative-quiz-option">
+
+                                    <input
+                                        type="radio"
+                                        name="question_{{ question.question_id }}"
+                                        value="A"
+                                    >
+
+                                    <span class="creative-option-letter">
+                                        A
+                                    </span>
+
+                                    <span class="creative-option-text">
+                                        {{ question.option_a }}
+                                    </span>
+
+                                    <span class="option-selected-icon">
+                                        ✓
+                                    </span>
+
+                                </label>
+
+
+                                <label class="creative-quiz-option">
+
+                                    <input
+                                        type="radio"
+                                        name="question_{{ question.question_id }}"
+                                        value="B"
+                                    >
+
+                                    <span class="creative-option-letter">
+                                        B
+                                    </span>
+
+                                    <span class="creative-option-text">
+                                        {{ question.option_b }}
+                                    </span>
+
+                                    <span class="option-selected-icon">
+                                        ✓
+                                    </span>
+
+                                </label>
+
+
+                                <label class="creative-quiz-option">
+
+                                    <input
+                                        type="radio"
+                                        name="question_{{ question.question_id }}"
+                                        value="C"
+                                    >
+
+                                    <span class="creative-option-letter">
+                                        C
+                                    </span>
+
+                                    <span class="creative-option-text">
+                                        {{ question.option_c }}
+                                    </span>
+
+                                    <span class="option-selected-icon">
+                                        ✓
+                                    </span>
+
+                                </label>
+
+
+                                <label class="creative-quiz-option">
+
+                                    <input
+                                        type="radio"
+                                        name="question_{{ question.question_id }}"
+                                        value="D"
+                                    >
+
+                                    <span class="creative-option-letter">
+                                        D
+                                    </span>
+
+                                    <span class="creative-option-text">
+                                        {{ question.option_d }}
+                                    </span>
+
+                                    <span class="option-selected-icon">
+                                        ✓
+                                    </span>
+
+                                </label>
+
+                            </div>
+
+
+                            <div
+                                class="creative-question-error"
+                                hidden
+                            >
+                                ⚠ Please choose an answer before continuing.
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                {% endfor %}
+
+
+                <div class="interactive-quiz-navigation">
+
+                    <button
+                        type="button"
+                        id="previousQuestionButton"
+                        class="quiz-navigation-secondary"
+                    >
+                        ← Previous
+                    </button>
+
+
+                    <div class="quiz-navigation-message">
+                        <span>
+                            🔐 Your answers are saved as you move through the quiz.
+                        </span>
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="nextQuestionButton"
+                        class="quiz-navigation-primary"
+                    >
+                        Next Question →
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        id="submitQuizButton"
+                        class="quiz-submit-final"
+                        hidden
+                    >
+                        Finish Challenge ✓
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+        {% else %}
+
+        <section class="interactive-quiz-shell">
+
+            <div class="empty-learning-state">
+
+                <div class="empty-learning-icon">
+                    📝
+                </div>
+
+                <h3>
+                    Quiz not available yet
+                </h3>
+
+                <p>
+                    Questions have not yet been added
+                    to this learning module.
+                </p>
+
+            </div>
+
+        </section>
+
+        {% endif %}
+
+    </main>
+
+</div>
+
+
+{% if questions %}
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const screens =
+            Array.from(
+                document.querySelectorAll(
+                    ".interactive-question-screen"
+                )
+            );
+
+        const nextButton =
+            document.getElementById(
+                "nextQuestionButton"
+            );
+
+        const previousButton =
+            document.getElementById(
+                "previousQuestionButton"
+            );
+
+        const submitButton =
+            document.getElementById(
+                "submitQuizButton"
+            );
+
+        const counter =
+            document.getElementById(
+                "questionCounter"
+            );
+
+        const percentageText =
+            document.getElementById(
+                "progressPercentage"
+            );
+
+        const progressFill =
+            document.getElementById(
+                "quizProgressFill"
+            );
+
+        const dots =
+            Array.from(
+                document.querySelectorAll(
+                    ".quiz-dot"
+                )
+            );
+
+        const quizForm =
+            document.getElementById(
+                "interactiveQuizForm"
+            );
+
+
+        let currentQuestion = 0;
+
+        const totalQuestions =
+            screens.length;
+
+
+        function showQuestion(index) {
+
+            screens.forEach(
+                function (
+                    screen,
+                    screenIndex
+                ) {
+
+                    screen.hidden =
+                        screenIndex !== index;
+
+                }
+            );
+
+
+            dots.forEach(
+                function (
+                    dot,
+                    dotIndex
+                ) {
+
+                    dot.classList.remove(
+                        "active"
+                    );
+
+                    if (dotIndex < index) {
+
+                        dot.classList.add(
+                            "completed"
+                        );
+
+                    } else {
+
+                        dot.classList.remove(
+                            "completed"
+                        );
+
+                    }
+
+                    if (dotIndex === index) {
+
+                        dot.classList.add(
+                            "active"
+                        );
+
+                    }
+
+                }
+            );
+
+
+            counter.textContent =
+                "Question "
+                + (index + 1)
+                + " of "
+                + totalQuestions;
+
+
+            const progress =
+                (
+                    (index + 1)
+                    / totalQuestions
+                ) * 100;
+
+
+            percentageText.textContent =
+                Math.round(
+                    progress
+                )
+                + "%";
+
+
+            progressFill.style.width =
+                progress + "%";
+
+
+            previousButton.style.visibility =
+                index === 0
+                ? "hidden"
+                : "visible";
+
+
+            if (
+                index ===
+                totalQuestions - 1
+            ) {
+
+                nextButton.hidden = true;
+                submitButton.hidden = false;
+
+            } else {
+
+                nextButton.hidden = false;
+                submitButton.hidden = true;
+
+            }
+
+        }
+
+
+        function validateCurrentQuestion() {
+
+            const currentScreen =
+                screens[
+                    currentQuestion
+                ];
+
+            const checked =
+                currentScreen.querySelector(
+                    'input[type="radio"]:checked'
+                );
+
+            const error =
+                currentScreen.querySelector(
+                    ".creative-question-error"
+                );
+
+
+            if (!checked) {
+
+                error.hidden = false;
+
+                return false;
+
+            }
+
+
+            error.hidden = true;
+
+            return true;
+
+        }
+
+
+        document
+            .querySelectorAll(
+                ".creative-quiz-option input"
+            )
+            .forEach(
+                function (input) {
+
+                    input.addEventListener(
+                        "change",
+                        function () {
+
+                            const screen =
+                                input.closest(
+                                    ".interactive-question-screen"
+                                );
+
+                            const options =
+                                screen.querySelectorAll(
+                                    ".creative-quiz-option"
+                                );
+
+
+                            options.forEach(
+                                function (option) {
+
+                                    option.classList.remove(
+                                        "selected"
+                                    );
+
+                                }
+                            );
+
+
+                            input
+                                .closest(
+                                    ".creative-quiz-option"
+                                )
+                                .classList.add(
+                                    "selected"
+                                );
+
+
+                            const error =
+                                screen.querySelector(
+                                    ".creative-question-error"
+                                );
+
+                            error.hidden = true;
+
+                        }
+                    );
+
+                }
+            );
+
+
+        nextButton.addEventListener(
+            "click",
+            function () {
+
+                if (
+                    !validateCurrentQuestion()
+                ) {
+                    return;
+                }
+
+                if (
+                    currentQuestion
+                    < totalQuestions - 1
+                ) {
+
+                    currentQuestion++;
+
+                    showQuestion(
+                        currentQuestion
+                    );
+
+                }
+
+            }
+        );
+
+
+        previousButton.addEventListener(
+            "click",
+            function () {
+
+                if (
+                    currentQuestion > 0
+                ) {
+
+                    currentQuestion--;
+
+                    showQuestion(
+                        currentQuestion
+                    );
+
+                }
+
+            }
+        );
+
+
+        quizForm.addEventListener(
+            "submit",
+            function (event) {
+
+                if (
+                    !validateCurrentQuestion()
+                ) {
+
+                    event.preventDefault();
+
+                }
+
+            }
+        );
+
+
+        showQuestion(
+            currentQuestion
+        );
+
+    }
+);
+
+</script>
+
+{% endif %}
+
+</body>
+
+</html>

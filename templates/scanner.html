@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PhishAI Scanner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+<div class="layout">
+
+    <aside class="sidebar">
+        <h2>🛡️ PhishAI</h2>
+        <nav>
+            <div class="sidebar-user">
+
+                <div class="user-avatar">
+                    {{ session.first_name[0]|upper }}
+                </div>
+
+                <div class="user-details">
+                    <strong>{{ session.first_name }}</strong>
+                    <small>{{ session.role }}</small>
+                </div>
+
+                <a href="/logout"
+                class="logout-button"
+                title="Logout">
+                    ↪
+                </a>
+
+            </div>
+            <a href="/">🏠 Dashboard</a>
+            <a class="active" href="/scanner">🔍 Scanner</a>
+            <a href="/history">📊 Detection History</a>
+            <a href="/awareness">🧠 Awareness Centre</a>
+            <a href="/report-scam">🚩 Report Scam</a>
+            <a href="#">⚙️ Settings</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="topbar">
+            <h1>Scanner</h1>
+            <span>Analyse emails, SMS messages and URLs for phishing or fraud attempts</span>
+        </header>
+
+        <section class="scanner-grid">
+
+            <div class="scan-card">
+                <h2>Scan Suspicious Content</h2>
+                <p>Paste an email, SMS message or URL below and let PhishAI analyse it.</p>
+
+                <form method="POST">
+                    <label>Content Type</label>
+                    <select name="input_type" required>
+                        <option value="Email">Email</option>
+                        <option value="SMS">SMS</option>
+                        <option value="URL">URL</option>
+                    </select>
+
+                    <label>Content to Analyse</label>
+                    <textarea name="submitted_content" rows="8" placeholder="Paste suspicious email, SMS or URL here..." required></textarea>
+
+                    <button type="submit" class="scan-btn">Scan Now</button>
+                </form>
+            </div>
+
+            <div class="scan-help">
+                <div class="ai-graphic small">
+                    <div class="shield">🛡️</div>
+                    <p>AI Threat Analysis</p>
+                </div>
+
+                <h3>What PhishAI checks</h3>
+                <ul>
+                    <li>Suspicious links</li>
+                    <li>Urgent or threatening language</li>
+                    <li>Prize or reward messages</li>
+                    <li>Banking or account-related requests</li>
+                    <li>Phishing patterns learned by the model</li>
+                </ul>
+            </div>
+
+        </section>
+
+        {% if result %}
+        <section class="result-panel">
+
+            <div class="result-header">
+                <h2>Detection Result</h2>
+                <span class="badge {{ result.risk_level|lower }}">{{ result.risk_level }} Risk</span>
+            </div>
+
+            <div class="result-cards">
+                <div class="mini-card">
+                    <h3>Prediction</h3>
+                    <p>{{ result.prediction }}</p>
+                </div>
+
+                <div class="mini-card">
+                    <h3>Confidence</h3>
+                    <p>{{ result.confidence }}%</p>
+                </div>
+
+                <div class="mini-card">
+                    <h3>Type</h3>
+                    <p>{{ result.input_type }}</p>
+                </div>
+            </div>
+
+            <div class="analysis-box">
+                <h3>Why was it classified this way?</h3>
+                <ul>
+                    {% for reason in result.reasons %}
+                        <li>{{ reason }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="analysis-box">
+                <h3>Recommended Action</h3>
+                <ul>
+                    {% for action in result.actions %}
+                        <li>{{ action }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% if result.prediction in ["Phishing", "Suspicious"] %}
+
+            <form method="POST" action="/report-scam" class="report-result-form">
+
+                <input
+                    type="hidden"
+                    name="report_type"
+                    value="{{ result.input_type }}">
+
+                <input
+                    type="hidden"
+                    name="reported_content"
+                    value="{{ result.submitted_content }}">
+
+                <button type="submit" class="report-btn">
+                    🚩 Report This Scam
+                </button>
+
+            </form>
+
+            {% endif %}
+
+        </section>
+        {% endif %}
+
+    </main>
+</div>
+</body>
+</html>
