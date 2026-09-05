@@ -372,12 +372,7 @@
                         <div class="risk-bar">
 
                             <div
-                                class="risk-fill
-                                {% if result.prediction == 'Malicious' %}
-                                    malicious-confidence-fill
-                                {% else %}
-                                    legitimate-confidence-fill
-                                {% endif %}"
+                                class="risk-fill {% if result.prediction == 'Malicious' %}malicious-confidence-fill{% else %}legitimate-confidence-fill{% endif %}"
                                 style="width: {{ result.model_confidence }}%"
                             >
                             </div>
@@ -589,6 +584,144 @@
 
                     </div>
 
+
+                    <!-- =================================================
+                         RECOMMENDED LEARNING
+                    ================================================== -->
+
+                    {% if result.recommended_modules %}
+
+                    <section class="smart-learning-section">
+
+                        <div class="smart-learning-heading">
+
+                            <span class="scanner-learning-label">
+                                PERSONALISED LEARNING
+                            </span>
+
+                            <h2>
+                                Recommended for this threat
+                            </h2>
+
+                            <p>
+                                Based on the type and structure of this URL,
+                                these learning modules can help you understand
+                                the risks involved.
+                            </p>
+
+                        </div>
+
+
+                        <div class="smart-learning-grid">
+
+                            {% for module in result.recommended_modules %}
+
+                                <article
+                                    class="smart-learning-card
+                                    {% if loop.first %}
+                                        primary-learning-card
+                                    {% endif %}"
+                                >
+
+                                    <div class="smart-learning-card-top">
+
+                                        <div class="smart-learning-module-icon">
+                                            {{ module.icon }}
+                                        </div>
+
+                                        {% if loop.first %}
+
+                                            <span class="primary-recommendation-badge">
+                                                PRIMARY
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="secondary-recommendation-badge">
+                                                RELATED
+                                            </span>
+
+                                        {% endif %}
+
+                                    </div>
+
+
+                                    <span class="smart-learning-category">
+                                        {{ module.category }}
+                                    </span>
+
+
+                                    <h3>
+                                        {{ module.title }}
+                                    </h3>
+
+
+                                    <p>
+                                        {{ module.description }}
+                                    </p>
+
+
+                                    <a
+                                        href="{{ url_for(
+                                            'learning_module',
+                                            module_id=module.module_id
+                                        ) }}"
+                                        class="smart-learning-button"
+                                    >
+                                        Start Learning →
+                                    </a>
+
+                                </article>
+
+                            {% endfor %}
+
+                        </div>
+
+                    </section>
+
+
+                {% elif result.recommended_module %}
+
+                    <section class="scanner-learning-recommendation">
+
+                        <div class="scanner-learning-icon">
+                            {{ result.recommended_module.icon }}
+                        </div>
+
+                        <div class="scanner-learning-content">
+
+                            <span class="scanner-learning-label">
+                                RECOMMENDED LEARNING
+                            </span>
+
+                            <h3>
+                                Learn more about
+                                {{ result.recommended_module.title }}
+                            </h3>
+
+                            <p>
+                                {{ result.recommended_module.description }}
+                            </p>
+
+                        </div>
+
+                        <a
+                            href="{{ url_for(
+                                'learning_module',
+                                module_id=result.recommended_module.module_id
+                            ) }}"
+                            class="scanner-learning-button"
+                        >
+                            Start Learning →
+                        </a>
+
+                    </section>
+
+                {% endif %}
+
+                    <!-- =================================================
+                         REPORT WEBSITE
+                    ================================================== -->
 
                     {% if result.prediction != "Legitimate" %}
 

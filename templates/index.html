@@ -1,30 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <title>PhishAI Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        PhishAI Dashboard
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
 </head>
 
 <body>
 
 <div class="layout">
 
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
     <aside class="sidebar">
-        <h2>🛡️ PhishAI</h2>
+
+        <h2>
+            🛡️ PhishAI
+        </h2>
 
         <nav>
 
-            <a class="active" href="/">🏠 Dashboard</a>
-            <a href="/email-scanner">📧 Email Scanner</a>
-            <a href="/sms-scanner">💬 SMS Scanner</a>
-            <a href="/url-scanner">🌐 URL Scanner</a>
-            <a href="/history">📊 Detection History</a>
-            <a href="/awareness">🧠 Awareness Centre</a>
-            <a href="/report-scam">🚩 Report Scam</a>
-            <a href="/scam-reports">📋 Reported Scams</a>
-            <a href="#">⚙️ Settings</a>
+            <a
+                class="active"
+                href="/"
+            >
+                🏠 Dashboard
+            </a>
+
+            <a href="/email-scanner">
+                📧 Email Scanner
+            </a>
+
+            <a href="/sms-scanner">
+                💬 SMS Scanner
+            </a>
+
+            <a href="/url-scanner">
+                🌐 URL Scanner
+            </a>
+
+            <a href="/history">
+                📊 Detection History
+            </a>
+
+            <a href="/awareness">
+                🧠 Awareness Centre
+            </a>
+
+            <a href="/report-scam">
+                🚩 Report Scam
+            </a>
+
+            <a href="/scam-reports">
+                📋 Reported Scams
+            </a>
+
+            {% if session.role == "Admin" %}
+
+                <a href="/admin/scam-reports">
+                    🛡️ Manage Scam Reports
+                </a>
+
+            {% endif %}
+
+            <a href="#">
+                ⚙️ Settings
+            </a>
+
         </nav>
+
         <div class="sidebar-user">
 
             <div class="user-avatar">
@@ -32,167 +93,1361 @@
             </div>
 
             <div class="user-details">
-                <strong>{{ session.first_name }}</strong>
-                <small>{{ session.role }}</small>
+
+                <strong>
+                    {{ session.first_name }}
+                </strong>
+
+                <small>
+                    {{ session.role }}
+                </small>
+
             </div>
 
-            <a href="/logout"
-               class="logout-button"
-               title="Logout">
+            <a
+                href="/logout"
+                class="logout-button"
+                title="Logout"
+            >
                 ↪
             </a>
+
         </div>
+
     </aside>
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+    ====================================================== -->
 
     <main class="main-content">
 
+
+        <!-- =================================================
+             TOP BAR
+        ================================================== -->
+
         <header class="topbar">
-            <h1>Dashboard</h1>
-            <span>AI Fraud & Phishing Detection Platform</span>
+
+            <h1>
+                Dashboard
+            </h1>
+
+            <span>
+                AI Fraud Detection & Cybersecurity Awareness Platform
+            </span>
+
         </header>
 
+
+        <!-- =================================================
+             HERO
+        ================================================== -->
+
         <section class="hero">
+
             <div>
-                <h2>Welcome to PhishAI</h2>
+
+                <span class="dashboard-hero-label">
+                    AI-POWERED PROTECTION
+                </span>
+
+                <h2>
+                    Welcome to PhishAI
+                </h2>
+
                 <p>
-                    Detect phishing emails, SMS messages and suspicious URLs using AI,
-                    while helping users understand cyber threats.
+                    Detect phishing emails, fraudulent SMS messages
+                    and malicious URLs using machine learning while
+                    improving your cybersecurity awareness.
                 </p>
-                <a href="/sms-scanner" class="primary-btn">Start Scanning</a>
+
+                <div class="dashboard-hero-actions">
+
+                    <a
+                        href="/sms-scanner"
+                        class="primary-btn"
+                    >
+                        Start Scanning
+                    </a>
+
+                    <a
+                        href="/awareness"
+                        class="dashboard-secondary-btn"
+                    >
+                        Continue Learning
+                    </a>
+
+                </div>
+
             </div>
+
 
             <div class="ai-graphic">
-                <div class="shield">🛡️</div>
-                <p>AI Protection</p>
+
+                <div class="shield">
+                    🛡️
+                </div>
+
+                <p>
+                    AI Protection
+                </p>
+
             </div>
+
         </section>
+
+
+        <!-- =================================================
+             DETECTION OVERVIEW
+        ================================================== -->
+
+        <section class="dashboard-section-heading">
+
+            <div>
+
+                <span>
+                    THREAT DETECTION
+                </span>
+
+                <h2>
+                    Detection Overview
+                </h2>
+
+            </div>
+
+            <a href="/history">
+                View Detection History →
+            </a>
+
+        </section>
+
 
         <section class="cards">
+
+
             <div class="card">
-                <h3>Total Scans</h3>
-                <p>{{ total_scans }}</p>
+
+                <span class="dashboard-card-icon">
+                    🔎
+                </span>
+
+                <h3>
+                    Total Scans
+                </h3>
+
+                <p>
+                    {{ total_scans }}
+                </p>
+
             </div>
+
 
             <div class="card danger">
-                <h3>Phishing Detected</h3>
-                <p>{{ phishing_count }}</p>
+
+                <span class="dashboard-card-icon">
+                    🚨
+                </span>
+
+                <h3>
+                    Threats Detected
+                </h3>
+
+                <p>
+                    {{ phishing_count }}
+                </p>
+
             </div>
+
 
             <div class="card warning">
-                <h3>Suspicious</h3>
-                <p>{{ suspicious_count }}</p>
+
+                <span class="dashboard-card-icon">
+                    ⚠️
+                </span>
+
+                <h3>
+                    Suspicious
+                </h3>
+
+                <p>
+                    {{ suspicious_count }}
+                </p>
+
             </div>
+
 
             <div class="card success">
-                <h3>Legitimate</h3>
-                <p>{{ legitimate_count }}</p>
+
+                <span class="dashboard-card-icon">
+                    ✅
+                </span>
+
+                <h3>
+                    Legitimate
+                </h3>
+
+                <p>
+                    {{ legitimate_count }}
+                </p>
+
             </div>
+
 
             <div class="card">
-                <h3>Scam Reports</h3>
-                <p>{{ scam_reports_count }}</p>
+
+                <span class="dashboard-card-icon">
+                    🚩
+                </span>
+
+                <h3>
+                    Scam Reports
+                </h3>
+
+                <p>
+                    {{ scam_reports_count }}
+                </p>
+
             </div>
+
 
             <div class="card">
-                <h3>Average Confidence</h3>
-                <p>{{ avg_confidence }}%</p>
+
+                <span class="dashboard-card-icon">
+                    🤖
+                </span>
+
+                <h3>
+                    Average Confidence
+                </h3>
+
+                <p>
+                    {{ avg_confidence }}%
+                </p>
+
             </div>
+
 
         </section>
-        
-         <section class="chart-grid">
 
-            <div class="chart-card">
-                <h2>Detection Summary</h2>
-                <canvas id="detectionChart"></canvas>
+
+        <!-- =================================================
+             LEARNING PROGRESS
+        ================================================== -->
+
+        <section class="dashboard-section-heading learning-heading">
+
+            <div>
+
+                <span>
+                    CYBERSECURITY AWARENESS
+                </span>
+
+                <h2>
+                    Your Learning Progress
+                </h2>
+
             </div>
 
-            <div class="chart-card">
-                <h2>Risk Level Summary</h2>
-                <canvas id="riskChart"></canvas>
-            </div>
+            <a href="/awareness">
+                Open Awareness Centre →
+            </a>
 
         </section>
-        <section class="info-panel">
-            <h2>Recent Scans</h2>
 
-            <table class="history-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Type</th>
-                        <th>Prediction</th>
-                        <th>Confidence</th>
-                        <th>Risk</th>
-                    </tr>
-                </thead>
 
-                <tbody>
-                    {% for scan in recent_scans %}
-                    <tr>
-                        <td>{{ scan.scan_date }}</td>
-                        <td>{{ scan.input_type }}</td>
-                        <td>{{ scan.prediction }}</td>
-                        <td>{{ scan.confidence_score }}%</td>
-                        <td>
-                            <span class="risk-badge {{ scan.risk_level|lower }}">
-                                {{ scan.risk_level }}
+        <section class="dashboard-learning-overview">
+
+
+            <div class="dashboard-learning-progress-card">
+
+
+                <div class="dashboard-progress-top">
+
+                    <div>
+
+                        <span class="dashboard-progress-label">
+                            OVERALL LEARNING PROGRESS
+                        </span>
+
+                        <h2>
+                            {{ learning_progress }}%
+                        </h2>
+
+                    </div>
+
+                    <div class="dashboard-progress-icon">
+                        🧠
+                    </div>
+
+                </div>
+
+
+                <div class="dashboard-progress-track">
+
+                    <div
+                        class="dashboard-progress-fill"
+                        style="width: {{ learning_progress }}%;"
+                    >
+                    </div>
+
+                </div>
+
+
+                <div class="dashboard-progress-details">
+
+                    <span>
+                        {{ lessons_completed }}
+                        of
+                        {{ total_lessons }}
+                        lessons completed
+                    </span>
+
+                    <span>
+                        {{ modules_completed }}
+                        of
+                        {{ total_modules }}
+                        modules completed
+                    </span>
+
+                </div>
+
+
+                {% if continue_module %}
+
+                    <div class="dashboard-continue-module">
+
+
+                        <div class="dashboard-continue-icon">
+                            {{ continue_module.icon }}
+                        </div>
+
+
+                        <div class="dashboard-continue-info">
+
+                            <span>
+                                CONTINUE LEARNING
                             </span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+                            <strong>
+                                {{ continue_module.title }}
+                            </strong>
+
+                            <small>
+                                {{ continue_module.completed_lessons }}
+                                /
+                                {{ continue_module.total_lessons }}
+                                lessons completed
+                            </small>
+
+                        </div>
+
+
+                        <a
+                            href="{{ url_for(
+                                'learning_module',
+                                module_id=continue_module.module_id
+                            ) }}"
+                            class="dashboard-continue-btn"
+                        >
+                            Continue →
+                        </a>
+
+
+                    </div>
+
+                {% endif %}
+
+
+            </div>
+
+
+            <div class="dashboard-learning-stat-grid">
+
+
+                <div class="dashboard-learning-stat">
+
+                    <div class="learning-stat-icon">
+                        📚
+                    </div>
+
+                    <span>
+                        Modules Completed
+                    </span>
+
+                    <strong>
+                        {{ modules_completed }}
+                        /
+                        {{ total_modules }}
+                    </strong>
+
+                </div>
+
+
+                <div class="dashboard-learning-stat">
+
+                    <div class="learning-stat-icon">
+                        📖
+                    </div>
+
+                    <span>
+                        Lessons Completed
+                    </span>
+
+                    <strong>
+                        {{ lessons_completed }}
+                        /
+                        {{ total_lessons }}
+                    </strong>
+
+                </div>
+
+
+                <div class="dashboard-learning-stat">
+
+                    <div class="learning-stat-icon">
+                        🏆
+                    </div>
+
+                    <span>
+                        Average Quiz Score
+                    </span>
+
+                    <strong>
+                        {{ average_quiz_score }}%
+                    </strong>
+
+                </div>
+
+
+                <div class="dashboard-learning-stat">
+
+                    <div class="learning-stat-icon">
+                        🎯
+                    </div>
+
+                    <span>
+                        Awareness Progress
+                    </span>
+
+                    <strong>
+                        {{ learning_progress }}%
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
         </section>
 
-        <section class="info-panel">
-            <h2>How the system works</h2>
-            <p>
-                Users submit an email, SMS message or URL. The system preprocesses the content,
-                extracts features, applies the trained machine learning model, and displays the
-                result with explanations and recommended actions.
-            </p>
+
+        <!-- =================================================
+             MODULE SNAPSHOT
+        ================================================== -->
+
+        <section class="dashboard-module-panel">
+
+
+            <div class="dashboard-module-heading">
+
+                <div>
+
+                    <span>
+                        LEARNING MODULES
+                    </span>
+
+                    <h2>
+                        Awareness Journey
+                    </h2>
+
+                </div>
+
+
+                <a href="/awareness">
+                    View All Modules →
+                </a>
+
+            </div>
+
+
+            <div class="dashboard-module-grid">
+
+
+                {% for module in learning_modules %}
+
+
+                    <article class="dashboard-module-card">
+
+
+                        <div class="dashboard-module-top">
+
+                            <div class="dashboard-module-icon">
+
+                                {{ module.icon }}
+
+                            </div>
+
+
+                            {% if module.module_completed %}
+
+                                <span class="dashboard-module-complete">
+                                    ✓ Completed
+                                </span>
+
+                            {% elif module.completed_lessons > 0 %}
+
+                                <span class="dashboard-module-progressing">
+                                    In Progress
+                                </span>
+
+                            {% else %}
+
+                                <span class="dashboard-module-new">
+                                    Not Started
+                                </span>
+
+                            {% endif %}
+
+
+                        </div>
+
+
+                        <span class="dashboard-module-category">
+
+                            {{ module.category }}
+
+                        </span>
+
+
+                        <h3>
+
+                            {{ module.title }}
+
+                        </h3>
+
+
+                        <div class="dashboard-module-progress-track">
+
+                            <div
+                                class="dashboard-module-progress-fill"
+                                style="width: {{ module.progress_percentage }}%;"
+                            >
+                            </div>
+
+                        </div>
+
+
+                        <div class="dashboard-module-meta">
+
+                            <span>
+
+                                {{ module.completed_lessons }}
+                                /
+                                {{ module.total_lessons }}
+                                lessons
+
+                            </span>
+
+
+                            <span>
+
+                                {{ module.best_quiz_score }}%
+                                quiz
+
+                            </span>
+
+                        </div>
+
+
+                        <a
+                            href="{{ url_for(
+                                'learning_module',
+                                module_id=module.module_id
+                            ) }}"
+                            class="dashboard-module-link"
+                        >
+
+                            {% if module.module_completed %}
+
+                                Review Module →
+
+                            {% elif module.completed_lessons > 0 %}
+
+                                Continue Module →
+
+                            {% else %}
+
+                                Start Module →
+
+                            {% endif %}
+
+                        </a>
+
+
+                    </article>
+
+
+                {% endfor %}
+
+
+            </div>
+
+
         </section>
+
+
+        <!-- =================================================
+             SECURITY INSIGHTS
+        ================================================== -->
+
+        <section class="dashboard-analytics-section">
+
+
+            <div class="dashboard-section-heading">
+
+                <div>
+
+                    <span>
+                        SECURITY INSIGHTS
+                    </span>
+
+                    <h2>
+                        Your Detection Analytics
+                    </h2>
+
+                </div>
+
+                <a href="/history">
+                    View Full History →
+                </a>
+
+            </div>
+
+
+            <div class="dashboard-analytics-grid">
+
+
+                <!-- =========================================
+                     DETECTION BREAKDOWN
+                ========================================== -->
+
+                <div class="analytics-card">
+
+
+                    <div class="analytics-card-header">
+
+                        <div>
+
+                            <span class="analytics-label">
+                                SCAN RESULTS
+                            </span>
+
+                            <h3>
+                                Detection Breakdown
+                            </h3>
+
+                            <p>
+                                How your analysed content has been classified.
+                            </p>
+
+                        </div>
+
+
+                        <div class="analytics-header-icon">
+                            📊
+                        </div>
+
+                    </div>
+
+
+                    <div class="detection-analytics-body">
+
+
+                        <div class="detection-chart-wrapper">
+
+                            <canvas id="detectionChart"></canvas>
+
+
+                            <div class="chart-centre-text">
+
+                                <strong>
+                                    {{ total_scans }}
+                                </strong>
+
+                                <span>
+                                    Total Scans
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="detection-stat-list">
+
+
+                            <div class="detection-stat-item threat">
+
+                                <div>
+
+                                    <span class="stat-dot"></span>
+
+                                    <strong>
+                                        Threats
+                                    </strong>
+
+                                </div>
+
+                                <span>
+                                    {{ phishing_count }}
+                                </span>
+
+                            </div>
+
+
+                            <div class="detection-stat-item suspicious">
+
+                                <div>
+
+                                    <span class="stat-dot"></span>
+
+                                    <strong>
+                                        Suspicious
+                                    </strong>
+
+                                </div>
+
+                                <span>
+                                    {{ suspicious_count }}
+                                </span>
+
+                            </div>
+
+
+                            <div class="detection-stat-item legitimate">
+
+                                <div>
+
+                                    <span class="stat-dot"></span>
+
+                                    <strong>
+                                        Legitimate
+                                    </strong>
+
+                                </div>
+
+                                <span>
+                                    {{ legitimate_count }}
+                                </span>
+
+                            </div>
+
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =========================================
+                     THREAT SEVERITY
+                ========================================== -->
+
+                <div class="analytics-card">
+
+
+                    <div class="analytics-card-header">
+
+                        <div>
+
+                            <span class="analytics-label">
+                                RISK DISTRIBUTION
+                            </span>
+
+                            <h3>
+                                Threat Severity
+                            </h3>
+
+                            <p>
+                                Distribution of analysed content by actual risk level.
+                            </p>
+
+                        </div>
+
+
+                        <div class="analytics-header-icon">
+                            🛡️
+                        </div>
+
+                    </div>
+
+
+                    <div class="risk-summary-list">
+
+
+                        <div class="risk-summary-row">
+
+                            <div class="risk-summary-info">
+
+                                <div>
+
+                                    <span class="risk-indicator high"></span>
+
+                                    <strong>
+                                        High Risk
+                                    </strong>
+
+                                </div>
+
+                                <strong>
+                                    {{ high_risk_count }}
+                                </strong>
+
+                            </div>
+
+
+                            <div class="analytics-progress-track">
+
+                                <div
+                                    class="analytics-progress-fill high"
+                                    data-count="{{ high_risk_count }}"
+                                >
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="risk-summary-row">
+
+                            <div class="risk-summary-info">
+
+                                <div>
+
+                                    <span class="risk-indicator medium"></span>
+
+                                    <strong>
+                                        Medium Risk
+                                    </strong>
+
+                                </div>
+
+                                <strong>
+                                    {{ medium_risk_count }}
+                                </strong>
+
+                            </div>
+
+
+                            <div class="analytics-progress-track">
+
+                                <div
+                                    class="analytics-progress-fill medium"
+                                    data-count="{{ medium_risk_count }}"
+                                >
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="risk-summary-row">
+
+                            <div class="risk-summary-info">
+
+                                <div>
+
+                                    <span class="risk-indicator low"></span>
+
+                                    <strong>
+                                        Low Risk
+                                    </strong>
+
+                                </div>
+
+                                <strong>
+                                    {{ low_risk_count }}
+                                </strong>
+
+                            </div>
+
+
+                            <div class="analytics-progress-track">
+
+                                <div
+                                    class="analytics-progress-fill low"
+                                    data-count="{{ low_risk_count }}"
+                                >
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="analytics-confidence-box">
+
+
+                        <div class="analytics-confidence-icon">
+                            🤖
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                AVERAGE AI CONFIDENCE
+                            </span>
+
+                            <strong>
+                                {{ avg_confidence }}%
+                            </strong>
+
+                        </div>
+
+
+                        <p>
+                            Average confidence across your analysed content.
+                        </p>
+
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+        <!-- =================================================
+             RECENT SCANS
+        ================================================== -->
+
+        <section class="info-panel">
+
+
+            <div class="dashboard-table-heading">
+
+                <h2>
+                    Recent Scans
+                </h2>
+
+                <a href="/history">
+                    View All →
+                </a>
+
+            </div>
+
+
+            {% if recent_scans %}
+
+                <table class="history-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Date
+                            </th>
+
+                            <th>
+                                Type
+                            </th>
+
+                            <th>
+                                Prediction
+                            </th>
+
+                            <th>
+                                Confidence
+                            </th>
+
+                            <th>
+                                Risk
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                        {% for scan in recent_scans %}
+
+                            <tr>
+
+                                <td>
+                                    {{ scan.scan_date }}
+                                </td>
+
+                                <td>
+                                    {{ scan.input_type }}
+                                </td>
+
+                                <td>
+                                    {{ scan.prediction }}
+                                </td>
+
+                                <td>
+                                    {{ scan.confidence_score }}%
+                                </td>
+
+                                <td>
+
+                                    <span
+                                        class="risk-badge {{ scan.risk_level|lower }}"
+                                    >
+                                        {{ scan.risk_level }}
+                                    </span>
+
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+
+                    </tbody>
+
+                </table>
+
+
+            {% else %}
+
+
+                <div class="dashboard-empty-state">
+
+                    <div>
+                        🔎
+                    </div>
+
+                    <h3>
+                        No scans yet
+                    </h3>
+
+                    <p>
+                        Analyse an email, SMS message or website URL
+                        to start building your detection history.
+                    </p>
+
+                    <a
+                        href="/sms-scanner"
+                        class="primary-btn"
+                    >
+                        Start Scanning
+                    </a>
+
+                </div>
+
+
+            {% endif %}
+
+
+        </section>
+
+
+        <!-- =================================================
+             HOW SYSTEM WORKS
+        ================================================== -->
+
+        <section class="info-panel">
+
+
+            <h2>
+                How PhishAI Works
+            </h2>
+
+
+            <div class="dashboard-how-grid">
+
+
+                <div class="dashboard-how-step">
+
+                    <span>
+                        1
+                    </span>
+
+                    <h3>
+                        Submit Content
+                    </h3>
+
+                    <p>
+                        Scan an email, SMS message or website URL.
+                    </p>
+
+                </div>
+
+
+                <div class="dashboard-how-step">
+
+                    <span>
+                        2
+                    </span>
+
+                    <h3>
+                        AI Detection
+                    </h3>
+
+                    <p>
+                        The trained machine-learning model analyses
+                        the submitted content.
+                    </p>
+
+                </div>
+
+
+                <div class="dashboard-how-step">
+
+                    <span>
+                        3
+                    </span>
+
+                    <h3>
+                        Understand the Risk
+                    </h3>
+
+                    <p>
+                        Review the prediction, confidence,
+                        explanation and recommended actions.
+                    </p>
+
+                </div>
+
+
+                <div class="dashboard-how-step">
+
+                    <span>
+                        4
+                    </span>
+
+                    <h3>
+                        Learn
+                    </h3>
+
+                    <p>
+                        PhishAI recommends awareness modules based
+                        on the detected threat.
+                    </p>
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
 
     </main>
 
 </div>
+
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+
 <script>
-const phishingCount = Number("{{ phishing_count }}");
-const suspiciousCount = Number("{{ suspicious_count }}");
-const legitimateCount = Number("{{ legitimate_count }}");
 
-new Chart(document.getElementById("detectionChart"), {
-    type: "doughnut",
-    data: {
-        labels: ["Phishing", "Suspicious", "Legitimate"],
-        datasets: [{
-            data: [phishingCount, suspiciousCount, legitimateCount],
-            backgroundColor: ["#dc2626", "#f59e0b", "#16a34a"]
-        }]
-    }
-});
+const phishingCount =
+    Number(
+        "{{ phishing_count }}"
+    );
 
-new Chart(document.getElementById("riskChart"), {
-    type: "bar",
-    data: {
-        labels: ["High", "Medium", "Low"],
-        datasets: [{
-            label: "Risk Levels",
-            data: [phishingCount, suspiciousCount, legitimateCount],
-            backgroundColor: ["#dc2626", "#f59e0b", "#16a34a"]
-        }]
-    },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true
+
+const suspiciousCount =
+    Number(
+        "{{ suspicious_count }}"
+    );
+
+
+const legitimateCount =
+    Number(
+        "{{ legitimate_count }}"
+    );
+
+
+const highRiskCount =
+    Number(
+        "{{ high_risk_count }}"
+    );
+
+
+const mediumRiskCount =
+    Number(
+        "{{ medium_risk_count }}"
+    );
+
+
+const lowRiskCount =
+    Number(
+        "{{ low_risk_count }}"
+    );
+
+
+const detectionCanvas =
+    document.getElementById(
+        "detectionChart"
+    );
+
+
+if (detectionCanvas) {
+
+    new Chart(
+        detectionCanvas,
+        {
+
+            type:
+                "doughnut",
+
+            data: {
+
+                labels: [
+                    "Threats",
+                    "Suspicious",
+                    "Legitimate"
+                ],
+
+                datasets: [
+                    {
+
+                        data: [
+                            phishingCount,
+                            suspiciousCount,
+                            legitimateCount
+                        ],
+
+                        backgroundColor: [
+                            "#dc2626",
+                            "#f59e0b",
+                            "#16a34a"
+                        ],
+
+                        borderWidth:
+                            0,
+
+                        hoverOffset:
+                            5
+
+                    }
+                ]
+
+            },
+
+
+            options: {
+
+                responsive:
+                    true,
+
+                maintainAspectRatio:
+                    false,
+
+                cutout:
+                    "74%",
+
+                plugins: {
+
+                    legend: {
+                        display:
+                            false
+                    },
+
+                    tooltip: {
+
+                        padding:
+                            12,
+
+                        callbacks: {
+
+                            label:
+                                function(context) {
+
+                                    return (
+                                        context.label
+                                        + ": "
+                                        + context.raw
+                                        + " scans"
+                                    );
+
+                                }
+
+                        }
+
+                    }
+
+                }
+
             }
+
         }
+    );
+
+}
+
+
+/* =========================================================
+   ACTUAL RISK PROGRESS BARS
+========================================================= */
+
+const riskBars =
+    document.querySelectorAll(
+        ".analytics-progress-fill"
+    );
+
+
+const largestRiskCount =
+    Math.max(
+        highRiskCount,
+        mediumRiskCount,
+        lowRiskCount,
+        1
+    );
+
+
+riskBars.forEach(
+    function(bar) {
+
+        const count =
+            Number(
+                bar.dataset.count
+            );
+
+
+        const percentage =
+            (
+                count
+                /
+                largestRiskCount
+            )
+            * 100;
+
+
+        bar.style.width =
+            percentage
+            + "%";
+
     }
-});
+);
+
 </script>
+
+
 </body>
+
 </html>

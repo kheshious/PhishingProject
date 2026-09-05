@@ -1,109 +1,705 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>Report Scam</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Report Scam | PhishAI
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
 </head>
 
+
 <body>
+
 <div class="layout">
 
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
     <aside class="sidebar">
-        <h2>🛡️ PhishAI</h2>
+
+        <h2>
+            🛡️ PhishAI
+        </h2>
+
         <nav>
-            <a href="/logout" class="logout-link">🚪 Logout</a>
-            <a href="/">🏠 Dashboard</a>
-            <a href="/email-scanner">📧 Email Scanner</a>
-            <a href="/sms-scanner">💬 SMS Scanner</a>
-            <a href="/url-scanner">🌐 URL Scanner</a>
-            <a href="/history">📊 Detection History</a>
-            <a href="/awareness">🧠 Awareness Centre</a>
-            <a class="active" href="/report-scam">🚩 Report Scam</a>
-            <a href="#">⚙️ Settings</a>
+
+            <a href="/">
+                🏠 Dashboard
+            </a>
+
+            <a href="/email-scanner">
+                📧 Email Scanner
+            </a>
+
+            <a href="/sms-scanner">
+                💬 SMS Scanner
+            </a>
+
+            <a href="/url-scanner">
+                🌐 URL Scanner
+            </a>
+
+            <a href="/history">
+                📊 Detection History
+            </a>
+
+            <a href="/awareness">
+                🧠 Awareness Centre
+            </a>
+
+            <a
+                class="active"
+                href="/report-scam"
+            >
+                🚩 Report Scam
+            </a>
+
+            <a href="/scam-reports">
+                📋 Reported Scams
+            </a>
+
+            <a href="#">
+                ⚙️ Settings
+            </a>
+
         </nav>
+
+
         <div class="sidebar-user">
 
-                <div class="user-avatar">
-                    {{ session.first_name[0]|upper }}
-                </div>
+            <div class="user-avatar">
+                {{ session.first_name[0]|upper }}
+            </div>
 
-                <div class="user-details">
-                    <strong>{{ session.first_name }}</strong>
-                    <small>{{ session.role }}</small>
-                </div>
+            <div class="user-details">
 
-                <a href="/logout"
+                <strong>
+                    {{ session.first_name }}
+                </strong>
+
+                <small>
+                    {{ session.role }}
+                </small>
+
+            </div>
+
+            <a
+                href="/logout"
                 class="logout-button"
-                title="Logout">
-                    ↪
-                </a>
+                title="Logout"
+            >
+                ↪
+            </a>
 
         </div>
+
     </aside>
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+    ====================================================== -->
 
     <main class="main-content">
 
+
+        <!-- =================================================
+             HEADER
+        ================================================== -->
+
         <header class="topbar">
-            <h1>Report Scam</h1>
-            <span>Submit suspicious emails, SMS messages or URLs for record keeping</span>
+
+            <h1>
+                Report Scam
+            </h1>
+
+            <span>
+                Report suspicious emails, SMS messages or websites
+            </span>
+
         </header>
 
-        {% if success %}
-        <div class="success-message">
-            Scam report submitted successfully.
-        </div>
-        {% endif %}
 
-        <section class="scan-card">
-            <h2>Submit a Scam Report</h2>
-            <p>This helps keep a record of suspicious content and can support future model improvement.</p>
+        <!-- =================================================
+             INTRO BANNER
+        ================================================== -->
 
-            <form method="POST">
+        <section class="report-scam-hero">
 
-                <input type="hidden" name="submit_report" value="true">
+            <div class="report-scam-hero-content">
 
-                <label>Report Type</label>
+                <span class="report-scam-eyebrow">
+                    COMMUNITY SAFETY
+                </span>
 
-                <select name="report_type" required>
-                    <option value="Email"
-                        {% if report_type == "Email" %}selected{% endif %}>
-                        Email
-                    </option>
+                <h2>
+                    Seen something suspicious?
+                </h2>
 
-                    <option value="SMS"
-                        {% if report_type == "SMS" %}selected{% endif %}>
-                        SMS
-                    </option>
+                <p>
+                    Submit suspicious content to PhishAI so that you
+                    have a record of the incident and can keep track
+                    of reported scams.
+                </p>
 
-                    <option value="URL"
-                        {% if report_type == "URL" %}selected{% endif %}>
-                        URL
-                    </option>
-                </select>
+                <div class="report-scam-hero-note">
 
-                <label>Reported Content</label>
+                    <span>
+                        🛡️
+                    </span>
 
-                <textarea
-                    name="reported_content"
-                    rows="7"
-                    placeholder="Paste the suspicious content here..."
-                    required>{{ reported_content }}</textarea>
+                    <p>
+                        Never include real passwords, PINs, OTPs or
+                        sensitive banking information in a report.
+                    </p>
 
-                <label>Description</label>
+                </div>
 
-                <textarea
-                    name="description"
-                    rows="4"
-                    placeholder="Explain why you believe this content is a scam.">{{ description }}</textarea>
+            </div>
 
-                <button type="submit" class="scan-btn">
-                    Submit Report
-                </button>
 
-            </form>
+            <div class="report-scam-hero-graphic">
+
+                <div>
+                    🚩
+                </div>
+
+                <strong>
+                    Report & Protect
+                </strong>
+
+            </div>
+
         </section>
 
+
+        <!-- =================================================
+             SUCCESS
+        ================================================== -->
+
+        {% if success %}
+
+            <div class="report-success-banner">
+
+                <div class="report-success-icon">
+                    ✓
+                </div>
+
+                <div>
+
+                    <strong>
+                        Scam report submitted successfully
+                    </strong>
+
+                    <p>
+                        Your report has been saved and can be viewed
+                        from the Reported Scams page.
+                    </p>
+
+                </div>
+
+                <a href="/scam-reports">
+                    View Reports →
+                </a>
+
+            </div>
+
+        {% endif %}
+
+
+        <!-- =================================================
+             REPORT STATS
+        ================================================== -->
+
+        <section class="report-summary-grid">
+
+
+            <div class="report-summary-card">
+
+                <div class="report-summary-icon">
+                    📋
+                </div>
+
+                <div>
+
+                    <span>
+                        Total Reports
+                    </span>
+
+                    <strong>
+                        {{ total_reports }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="report-summary-card">
+
+                <div class="report-summary-icon">
+                    ⏳
+                </div>
+
+                <div>
+
+                    <span>
+                        Pending Review
+                    </span>
+
+                    <strong>
+                        {{ pending_reports }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="report-summary-card">
+
+                <div class="report-summary-icon">
+                    🚨
+                </div>
+
+                <div>
+
+                    <span>
+                        Confirmed Scams
+                    </span>
+
+                    <strong>
+                        {{ confirmed_reports }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+        <!-- =================================================
+             MAIN REPORT AREA
+        ================================================== -->
+
+        <section class="report-page-grid">
+
+
+            <!-- =============================================
+                 FORM
+            ============================================== -->
+
+            <div class="report-form-card">
+
+
+                <div class="report-card-heading">
+
+                    <span>
+                        SUBMIT REPORT
+                    </span>
+
+                    <h2>
+                        Tell us what happened
+                    </h2>
+
+                    <p>
+                        Select the type of suspicious content and provide
+                        the information you want to keep on record.
+                    </p>
+
+                </div>
+
+
+                <form method="POST">
+
+
+                    <input
+                        type="hidden"
+                        name="submit_report"
+                        value="true"
+                    >
+
+
+                    <!-- =====================================
+                         REPORT TYPE
+                    ====================================== -->
+
+                    <label class="report-form-label">
+                        Report Type
+                    </label>
+
+
+                    <div class="report-type-selector">
+
+
+                        <label class="report-type-option">
+
+                            <input
+                                type="radio"
+                                name="report_type"
+                                value="Email"
+                                {% if report_type == "Email" %}
+                                    checked
+                                {% endif %}
+                                required
+                            >
+
+                            <span class="report-type-content">
+
+                                <span class="report-type-icon">
+                                    📧
+                                </span>
+
+                                <strong>
+                                    Email
+                                </strong>
+
+                                <small>
+                                    Suspicious email
+                                </small>
+
+                            </span>
+
+                        </label>
+
+
+                        <label class="report-type-option">
+
+                            <input
+                                type="radio"
+                                name="report_type"
+                                value="SMS"
+                                {% if report_type == "SMS" %}
+                                    checked
+                                {% endif %}
+                                required
+                            >
+
+                            <span class="report-type-content">
+
+                                <span class="report-type-icon">
+                                    💬
+                                </span>
+
+                                <strong>
+                                    SMS
+                                </strong>
+
+                                <small>
+                                    Fraudulent message
+                                </small>
+
+                            </span>
+
+                        </label>
+
+
+                        <label class="report-type-option">
+
+                            <input
+                                type="radio"
+                                name="report_type"
+                                value="URL"
+                                {% if report_type == "URL" %}
+                                    checked
+                                {% endif %}
+                                required
+                            >
+
+                            <span class="report-type-content">
+
+                                <span class="report-type-icon">
+                                    🌐
+                                </span>
+
+                                <strong>
+                                    URL
+                                </strong>
+
+                                <small>
+                                    Suspicious website
+                                </small>
+
+                            </span>
+
+                        </label>
+
+
+                    </div>
+
+
+                    <!-- =====================================
+                         CONTENT
+                    ====================================== -->
+
+                    <div class="report-field">
+
+                        <div class="report-field-heading">
+
+                            <label for="reported_content">
+                                Reported Content
+                            </label>
+
+                            <span>
+                                Required
+                            </span>
+
+                        </div>
+
+
+                        <textarea
+                            id="reported_content"
+                            name="reported_content"
+                            rows="8"
+                            maxlength="5000"
+                            placeholder="Paste the suspicious email, SMS message or website URL here..."
+                            required
+                        >{{ reported_content }}</textarea>
+
+
+                        <small>
+                            Remove passwords, PINs, OTPs and other
+                            sensitive personal information first.
+                        </small>
+
+                    </div>
+
+
+                    <!-- =====================================
+                         DESCRIPTION
+                    ====================================== -->
+
+                    <div class="report-field">
+
+                        <div class="report-field-heading">
+
+                            <label for="description">
+                                Why do you believe it is suspicious?
+                            </label>
+
+                            <span class="optional-label">
+                                Optional
+                            </span>
+
+                        </div>
+
+
+                        <textarea
+                            id="description"
+                            name="description"
+                            rows="5"
+                            maxlength="2000"
+                            placeholder="For example: The message asked me to verify my bank account through an unknown link..."
+                        >{{ description }}</textarea>
+
+                    </div>
+
+
+                    <div class="report-submit-row">
+
+                        <span>
+                            🔒 Your report is linked only to your PhishAI account.
+                        </span>
+
+                        <button
+                            type="submit"
+                            class="scan-btn report-submit-button"
+                        >
+                            🚩 Submit Scam Report
+                        </button>
+
+                    </div>
+
+
+                </form>
+
+            </div>
+
+
+            <!-- =============================================
+                 RIGHT SIDE
+            ============================================== -->
+
+            <aside class="report-guidance-column">
+
+
+                <div class="report-guidance-card">
+
+                    <div class="report-guidance-icon">
+                        💡
+                    </div>
+
+                    <h3>
+                        Before you report
+                    </h3>
+
+                    <ul>
+
+                        <li>
+                            Do not interact further with the suspicious sender.
+                        </li>
+
+                        <li>
+                            Do not click unknown links or download attachments.
+                        </li>
+
+                        <li>
+                            Remove private credentials before submitting content.
+                        </li>
+
+                        <li>
+                            Contact the real organisation directly if money or
+                            account access is involved.
+                        </li>
+
+                    </ul>
+
+                </div>
+
+
+                <div class="report-guidance-card danger-guidance">
+
+                    <div class="report-guidance-icon">
+                        🚨
+                    </div>
+
+                    <h3>
+                        Already shared information?
+                    </h3>
+
+                    <p>
+                        If you already entered a password, OTP or banking
+                        information, secure the affected account immediately
+                        using the organisation's official channel.
+                    </p>
+
+                </div>
+
+
+                {% if recent_reports %}
+
+                    <div class="recent-report-card">
+
+                        <div class="recent-report-header">
+
+                            <div>
+
+                                <span>
+                                    RECENT ACTIVITY
+                                </span>
+
+                                <h3>
+                                    Your Latest Reports
+                                </h3>
+
+                            </div>
+
+                            <a href="/scam-reports">
+                                View All →
+                            </a>
+
+                        </div>
+
+
+                        <div class="recent-report-list">
+
+
+                            {% for report in recent_reports %}
+
+                                <div class="recent-report-item">
+
+                                    <div class="recent-report-icon">
+
+                                        {% if report.report_type == "Email" %}
+
+                                            📧
+
+                                        {% elif report.report_type == "SMS" %}
+
+                                            💬
+
+                                        {% else %}
+
+                                            🌐
+
+                                        {% endif %}
+
+                                    </div>
+
+
+                                    <div class="recent-report-details">
+
+                                        <strong>
+                                            {{ report.report_type }}
+                                        </strong>
+
+                                        <span>
+                                            {{ report.reported_content }}
+                                        </span>
+
+                                        <small>
+                                            {{ report.report_date }}
+                                        </small>
+
+                                    </div>
+
+
+                                    <span
+                                        class="recent-report-status
+                                        {% if report.status == 'Confirmed Scam' %}
+                                            confirmed
+                                        {% elif report.status == 'Not a Scam' %}
+                                            safe
+                                        {% elif report.status == 'Reviewed' %}
+                                            reviewed
+                                        {% else %}
+                                            pending
+                                        {% endif %}"
+                                    >
+                                        {{ report.status }}
+                                    </span>
+
+                                </div>
+
+                            {% endfor %}
+
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+
+            </aside>
+
+
+        </section>
+
+
     </main>
+
 </div>
+
+
 </body>
+
 </html>

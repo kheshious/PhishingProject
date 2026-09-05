@@ -58,6 +58,92 @@ def login_required(view_function):
 
     return wrapped_view
 
+def admin_required(view_function):
+
+    @wraps(view_function)
+    def wrapped_view(*args, **kwargs):
+
+        if "user_id" not in session:
+
+            flash(
+                "Please log in to continue.",
+                "warning"
+            )
+
+            return redirect(
+                url_for("login")
+            )
+
+
+        user_role = str(
+            session.get(
+                "role",
+                ""
+            )
+        ).strip().lower()
+
+
+        if user_role != "admin":
+
+            flash(
+                "You do not have permission to access the administrator area.",
+                "error"
+            )
+
+            return redirect(
+                url_for("home")
+            )
+
+
+        return view_function(
+            *args,
+            **kwargs
+        )
+
+
+    return wrapped_view
+
+def user_required(f):
+
+    @wraps(f)
+    def decorated_function(
+        *args,
+        **kwargs
+    ):
+
+        # User must be logged in
+        if "user_id" not in session:
+
+            return redirect(
+                url_for(
+                    "login"
+                )
+            )
+
+        if (
+            str(
+                session.get(
+                    "role",
+                    ""
+                )
+            )
+            .strip()
+            .lower()
+            == "admin"
+        ):
+
+            return redirect(
+                url_for(
+                    "admin_scam_reports"
+                )
+            )
+
+        return f(
+            *args,
+            **kwargs
+        )
+
+    return decorated_function
 
 def save_detection(
     input_type,
@@ -174,10 +260,11 @@ def get_module_progress(user_id, module_id):
     }
 
 @app.route("/")
-@login_required
+@user_required
 def home():
 
     conn = get_db_connection()
+
     cursor = conn.cursor(
         dictionary=True
     )
@@ -197,6 +284,7 @@ def home():
 
     total_scans = (
         cursor.fetchone()["total"]
+        or 0
     )
 
     cursor.execute(
@@ -204,10 +292,10 @@ def home():
         SELECT COUNT(*) AS total
         FROM detections
         WHERE user_id = %s
-        AND prediction IN (
-            'Phishing',
-            'Malicious'
-        )
+          AND prediction IN (
+              'Phishing',
+              'Malicious'
+          )
         """,
         (
             user_id,
@@ -216,14 +304,16 @@ def home():
 
     phishing_count = (
         cursor.fetchone()["total"]
+        or 0
     )
+
 
     cursor.execute(
         """
         SELECT COUNT(*) AS total
         FROM detections
         WHERE user_id = %s
-        AND prediction = 'Suspicious'
+          AND prediction = 'Suspicious'
         """,
         (
             user_id,
@@ -232,14 +322,16 @@ def home():
 
     suspicious_count = (
         cursor.fetchone()["total"]
+        or 0
     )
+
 
     cursor.execute(
         """
         SELECT COUNT(*) AS total
         FROM detections
         WHERE user_id = %s
-        AND prediction = 'Legitimate'
+          AND prediction = 'Legitimate'
         """,
         (
             user_id,
@@ -248,6 +340,60 @@ def home():
 
     legitimate_count = (
         cursor.fetchone()["total"]
+        or 0
+    )
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM detections
+        WHERE user_id = %s
+          AND risk_level = 'High'
+        """,
+        (
+            user_id,
+        )
+    )
+
+    high_risk_count = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM detections
+        WHERE user_id = %s
+          AND risk_level = 'Medium'
+        """,
+        (
+            user_id,
+        )
+    )
+
+    medium_risk_count = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM detections
+        WHERE user_id = %s
+          AND risk_level = 'Low'
+        """,
+        (
+            user_id,
+        )
+    )
+
+    low_risk_count = (
+        cursor.fetchone()["total"]
+        or 0
     )
 
     cursor.execute(
@@ -263,6 +409,7 @@ def home():
 
     scam_reports_count = (
         cursor.fetchone()["total"]
+        or 0
     )
 
     cursor.execute(
@@ -309,23 +456,302 @@ def home():
         cursor.fetchall()
     )
 
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total_modules
+        FROM learning_modules
+        """
+    )
+
+    total_modules = (
+        cursor.fetchone()[
+            "total_modules"
+        ]
+        or 0
+    )
+
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS completed_modules
+        FROM user_learning_progress
+        WHERE user_id = %s
+          AND module_completed = 1
+        """,
+        (
+            user_id,
+        )
+    )
+
+    modules_completed = (
+        cursor.fetchone()[
+            "completed_modules"
+        ]
+        or 0
+    )
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total_lessons
+        FROM learning_lessons
+        """
+    )
+
+    total_lessons = (
+        cursor.fetchone()[
+            "total_lessons"
+        ]
+        or 0
+    )
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS completed_lessons
+        FROM user_lesson_progress ulp
+
+        INNER JOIN learning_lessons ll
+            ON ll.lesson_id = ulp.lesson_id
+
+        WHERE ulp.user_id = %s
+          AND ulp.completed = 1
+        """,
+        (
+            user_id,
+        )
+    )
+
+    lessons_completed = (
+        cursor.fetchone()[
+            "completed_lessons"
+        ]
+        or 0
+    )
+
+
+    if total_lessons > 0:
+
+        learning_progress = round(
+            (
+                lessons_completed
+                / total_lessons
+            ) * 100
+        )
+
+    else:
+
+        learning_progress = 0
+
+
+    cursor.execute(
+        """
+        SELECT
+            ROUND(
+                AVG(best_quiz_score),
+                2
+            ) AS average_quiz_score
+        FROM user_learning_progress
+        WHERE user_id = %s
+          AND best_quiz_score > 0
+        """,
+        (
+            user_id,
+        )
+    )
+
+    average_quiz_score = (
+        cursor.fetchone()[
+            "average_quiz_score"
+        ]
+        or 0
+    )
+
+
+    cursor.execute(
+        """
+        SELECT
+            lm.module_id,
+            lm.title,
+            lm.category,
+            lm.description,
+            lm.icon,
+            lm.display_order,
+
+            COUNT(
+                DISTINCT ll.lesson_id
+            ) AS total_lessons,
+
+            COUNT(
+                DISTINCT CASE
+                    WHEN ulp.completed = 1
+                    THEN ll.lesson_id
+                END
+            ) AS completed_lessons,
+
+            COALESCE(
+                ulearn.best_quiz_score,
+                0
+            ) AS best_quiz_score,
+
+            COALESCE(
+                ulearn.module_completed,
+                0
+            ) AS module_completed
+
+        FROM learning_modules lm
+
+        LEFT JOIN learning_lessons ll
+            ON ll.module_id = lm.module_id
+
+        LEFT JOIN user_lesson_progress ulp
+            ON ulp.lesson_id = ll.lesson_id
+            AND ulp.user_id = %s
+
+        LEFT JOIN user_learning_progress ulearn
+            ON ulearn.module_id = lm.module_id
+            AND ulearn.user_id = %s
+
+        GROUP BY
+            lm.module_id,
+            lm.title,
+            lm.category,
+            lm.description,
+            lm.icon,
+            lm.display_order,
+            ulearn.best_quiz_score,
+            ulearn.module_completed
+
+        ORDER BY
+            lm.display_order
+        """,
+        (
+            user_id,
+            user_id,
+        )
+    )
+
+    learning_modules = (
+        cursor.fetchall()
+    )
+
+    for module in learning_modules:
+
+        module_total = (
+            module["total_lessons"]
+            or 0
+        )
+
+        module_completed_lessons = (
+            module["completed_lessons"]
+            or 0
+        )
+
+
+        if module_total > 0:
+
+            module["progress_percentage"] = round(
+                (
+                    module_completed_lessons
+                    / module_total
+                ) * 100
+            )
+
+        else:
+
+            module["progress_percentage"] = 0
+
+
+    continue_module = None
+
+
+    for module in learning_modules:
+
+        if (
+            module["completed_lessons"] > 0
+            and not module["module_completed"]
+        ):
+
+            continue_module = module
+
+            break
+
+    if continue_module is None:
+
+        for module in learning_modules:
+
+            if (
+                module["completed_lessons"] == 0
+                and not module["module_completed"]
+            ):
+
+                continue_module = module
+
+                break
+
+
+    if (
+        continue_module is None
+        and learning_modules
+    ):
+
+        continue_module = (
+            learning_modules[0]
+        )
+
+
     cursor.close()
+
     conn.close()
 
     return render_template(
         "index.html",
+
+        # -------------------------------------------------
+        # DETECTION COUNTS
+        # -------------------------------------------------
+
         total_scans=total_scans,
+
         phishing_count=phishing_count,
+
         suspicious_count=suspicious_count,
+
         legitimate_count=legitimate_count,
+
+
+
+        high_risk_count=high_risk_count,
+
+        medium_risk_count=medium_risk_count,
+
+        low_risk_count=low_risk_count,
+
+
         scam_reports_count=scam_reports_count,
+
         avg_confidence=avg_confidence,
+
         recent_scans=recent_scans,
+
+        total_modules=total_modules,
+
+        modules_completed=modules_completed,
+
+        total_lessons=total_lessons,
+
+        lessons_completed=lessons_completed,
+
+        learning_progress=learning_progress,
+
+        average_quiz_score=average_quiz_score,
+
+        learning_modules=learning_modules,
+
+        continue_module=continue_module,
     )
 
 
 @app.route("/scanner")
-@login_required
+@user_required
 def scanner():
 
     return redirect(
@@ -334,86 +760,320 @@ def scanner():
         )
     )
 
+def get_recommended_learning_modules(
+    input_type,
+    prediction,
+    submitted_content="",
+    reasons=None
+):
 
-@app.route(
-    "/sms-scanner",
-    methods=[
-        "GET",
-        "POST"
-    ]
-)
-@login_required
+    if prediction not in (
+        "Phishing",
+        "Malicious",
+        "Suspicious",
+    ):
+        return []
+
+
+    submitted_content = (
+        submitted_content
+        or ""
+    ).lower()
+
+
+    if reasons is None:
+        reasons = []
+
+
+    reason_text = " ".join(
+        str(reason)
+        for reason in reasons
+    ).lower()
+
+
+    analysis_text = (
+        submitted_content
+        + " "
+        + reason_text
+    )
+
+    recommended_titles = []
+
+
+    if input_type == "Email":
+
+        recommended_titles.append(
+            "Email Phishing"
+        )
+
+
+    elif input_type == "SMS":
+
+        recommended_titles.append(
+            "Smishing"
+        )
+
+
+    elif input_type == "URL":
+
+        recommended_titles.append(
+            "Malicious URLs"
+        )
+
+    banking_terms = (
+        "bank",
+        "banking",
+        "account",
+        "payment",
+        "transaction",
+        "transfer",
+        "money",
+        "refund",
+        "card",
+        "credit card",
+        "debit card",
+        "pin",
+        "otp",
+        "one-time pin",
+        "cash",
+        "payment failed",
+        "account suspended",
+        "account blocked",
+        "verify payment",
+        "verify account",
+        "fnb",
+        "absa",
+        "standard bank",
+        "nedbank",
+        "capitec",
+        "discovery bank",
+    )
+
+
+    if any(
+        term in analysis_text
+        for term in banking_terms
+    ):
+
+        recommended_titles.append(
+            "Banking and Payment Scams"
+        )
+
+    credential_terms = (
+        "password",
+        "username",
+        "login",
+        "log in",
+        "sign in",
+        "signin",
+        "credential",
+        "credentials",
+        "otp",
+        "one-time pin",
+        "verification code",
+        "security code",
+        "reset password",
+        "confirm password",
+        "verify identity",
+        "verify your details",
+        "account verification",
+    )
+
+
+    if any(
+        term in analysis_text
+        for term in credential_terms
+    ):
+
+        recommended_titles.append(
+            "Account and Credential Theft"
+        )
+
+    social_engineering_terms = (
+        "urgent",
+        "urgently",
+        "immediately",
+        "act now",
+        "final warning",
+        "last warning",
+        "suspended",
+        "blocked",
+        "prize",
+        "winner",
+        "won",
+        "reward",
+        "limited time",
+        "verify immediately",
+        "click immediately",
+        "respond immediately",
+        "failure to",
+        "within 24 hours",
+        "security alert",
+    )
+
+
+    if any(
+        term in analysis_text
+        for term in social_engineering_terms
+    ):
+
+        recommended_titles.append(
+            "Social Engineering"
+        )
+
+    unique_titles = []
+
+    for title in recommended_titles:
+
+        if title not in unique_titles:
+
+            unique_titles.append(
+                title
+            )
+
+    unique_titles = unique_titles[:3]
+
+
+    if not unique_titles:
+
+        return []
+
+    placeholders = ", ".join(
+        ["%s"] * len(unique_titles)
+    )
+
+
+    conn = get_db_connection()
+
+    cursor = conn.cursor(
+        dictionary=True
+    )
+
+
+    query = f"""
+        SELECT
+            module_id,
+            title,
+            category,
+            description,
+            icon
+        FROM learning_modules
+        WHERE title IN ({placeholders})
+    """
+
+
+    cursor.execute(
+        query,
+        tuple(unique_titles)
+    )
+
+
+    modules = cursor.fetchall()
+
+
+    cursor.close()
+
+    conn.close()
+
+    module_lookup = {
+        module["title"]: module
+        for module in modules
+    }
+
+
+    ordered_modules = []
+
+
+    for title in unique_titles:
+
+        module = module_lookup.get(
+            title
+        )
+
+        if module:
+
+            ordered_modules.append(
+                module
+            )
+
+
+    return ordered_modules
+
+@app.route("/sms-scanner", methods=["GET", "POST"])
+@user_required
 def sms_scanner():
 
     result = None
 
     if request.method == "POST":
 
-        submitted_content = (
-            request.form.get(
-                "submitted_content",
-                ""
-            ).strip()
+        submitted_content = request.form["submitted_content"]
+
+        prediction_result = predict_message(
+            submitted_content
         )
 
-        if not submitted_content:
-
-            flash(
-                "Please enter an SMS message.",
-                "warning"
+        recommended_modules = get_recommended_learning_modules(
+            input_type="SMS",
+            prediction=prediction_result["prediction"],
+            submitted_content=submitted_content,
+            reasons=prediction_result.get(
+                "reasons",
+                []
             )
+        )
 
-            return render_template(
-                "sms_scanner.html",
-                result=None
-            )
-
-        prediction_result = (
-            predict_message(
-                submitted_content
-            )
+        recommended_module = (
+            recommended_modules[0]
+            if recommended_modules
+            else None
         )
 
         result = {
-            "input_type": "SMS",
+
+            "input_type":
+                "SMS",
+
             "submitted_content":
                 submitted_content,
+
             "prediction":
-                prediction_result[
-                    "prediction"
-                ],
-            "confidence": round(
-                prediction_result[
-                    "confidence"
-                ],
-                2
-            ),
+                prediction_result["prediction"],
+
+            "confidence":
+                round(
+                    float(
+                        prediction_result["confidence"]
+                    ),
+                    2
+                ),
+
             "risk_level":
-                prediction_result[
-                    "risk_level"
-                ],
+                prediction_result["risk_level"],
+
             "reasons":
-                prediction_result[
-                    "reasons"
-                ],
+                prediction_result.get(
+                    "reasons",
+                    []
+                ),
+
             "actions":
-                prediction_result[
-                    "recommended_actions"
-                ],
-            "legitimate_probability":
                 prediction_result.get(
-                    "legitimate_probability"
+                    "recommended_actions",
+                    []
                 ),
-            "smishing_probability":
-                prediction_result.get(
-                    "smishing_probability"
-                ),
+
+            "recommended_module":
+                recommended_module,
+
+            "recommended_modules":
+                recommended_modules
         }
 
         save_detection(
-            "SMS",
-            submitted_content,
-            prediction_result,
+            input_type="SMS",
+            submitted_content=submitted_content,
+            prediction_result=prediction_result,
         )
 
     return render_template(
@@ -422,85 +1082,84 @@ def sms_scanner():
     )
 
 
-@app.route(
-    "/email-scanner",
-    methods=[
-        "GET",
-        "POST"
-    ]
-)
-@login_required
+@app.route("/email-scanner", methods=["GET", "POST"])
+@user_required
 def email_scanner():
 
     result = None
 
     if request.method == "POST":
 
-        submitted_content = (
-            request.form.get(
-                "submitted_content",
-                ""
-            ).strip()
+        submitted_content = request.form["submitted_content"]
+
+        # Run Email machine-learning prediction
+        prediction_result = predict_email(
+            submitted_content
         )
 
-        if not submitted_content:
-
-            flash(
-                "Please enter email content.",
-                "warning"
-            )
-
-            return render_template(
-                "email_scanner.html",
-                result=None
-            )
-
-        prediction_result = (
-            predict_email(
-                submitted_content
+        # Get personalised learning recommendations
+        recommended_modules = get_recommended_learning_modules(
+            input_type="Email",
+            prediction=prediction_result["prediction"],
+            submitted_content=submitted_content,
+            reasons=prediction_result.get(
+                "reasons",
+                []
             )
         )
 
+        recommended_module = (
+            recommended_modules[0]
+            if recommended_modules
+            else None
+        )
+
+        # Build result for the HTML page
         result = {
-            "input_type": "Email",
+
+            "input_type":
+                "Email",
+
             "submitted_content":
                 submitted_content,
+
             "prediction":
-                prediction_result[
-                    "prediction"
-                ],
-            "confidence": round(
-                prediction_result[
-                    "confidence"
-                ],
-                2
-            ),
+                prediction_result["prediction"],
+
+            "confidence":
+                round(
+                    float(
+                        prediction_result["confidence"]
+                    ),
+                    2
+                ),
+
             "risk_level":
-                prediction_result[
-                    "risk_level"
-                ],
+                prediction_result["risk_level"],
+
             "reasons":
-                prediction_result[
-                    "reasons"
-                ],
+                prediction_result.get(
+                    "reasons",
+                    []
+                ),
+
             "actions":
-                prediction_result[
-                    "recommended_actions"
-                ],
-            "legitimate_probability":
                 prediction_result.get(
-                    "legitimate_probability"
+                    "recommended_actions",
+                    []
                 ),
-            "phishing_probability":
-                prediction_result.get(
-                    "phishing_probability"
-                ),
+
+            "recommended_module":
+                recommended_module,
+
+            "recommended_modules":
+                recommended_modules
         }
 
         save_detection(
-            "Email",
-            submitted_content,
-            prediction_result,
+            input_type="Email",
+            submitted_content=submitted_content,
+            prediction_result=prediction_result,
         )
 
     return render_template(
@@ -509,174 +1168,224 @@ def email_scanner():
     )
 
 
-@app.route(
-    "/url-scanner",
-    methods=[
-        "GET",
-        "POST"
-    ]
-)
-@login_required
+    return render_template(
+        "email_scanner.html",
+        result=result
+    )
+
+
+@app.route("/url-scanner", methods=["GET", "POST"])
+@user_required
 def url_scanner():
 
     result = None
 
     if request.method == "POST":
 
-        submitted_content = (
-            request.form.get(
-                "submitted_content",
-                ""
-            ).strip()
+        submitted_content = request.form["submitted_content"]
+
+        # Run URL machine-learning prediction
+        prediction_result = predict_url(
+            submitted_content
         )
 
-        if not submitted_content:
-
-            flash(
-                "Please enter a website URL.",
-                "warning"
-            )
-
-            return render_template(
-                "url_scanner.html",
-                result=None
-            )
-
-        prediction_result = (
-            predict_url(
-                submitted_content
+        # Get personalised learning recommendations
+        recommended_modules = get_recommended_learning_modules(
+            input_type="URL",
+            prediction=prediction_result["prediction"],
+            submitted_content=submitted_content,
+            reasons=prediction_result.get(
+                "reasons",
+                []
             )
         )
 
-        if not prediction_result[
-            "is_valid"
-        ]:
+        recommended_module = (
+            recommended_modules[0]
+            if recommended_modules
+            else None
+        )
+
+        # -------------------------------------------------
+        # INVALID URL
+        # -------------------------------------------------
+
+        if prediction_result["prediction"] == "Invalid URL":
 
             result = {
-                "input_type": "URL",
+
+                "input_type":
+                    "URL",
+
                 "submitted_content":
                     submitted_content,
-                "is_valid": False,
+
                 "prediction":
                     "Invalid URL",
-                "confidence": 0,
-                "risk_level": "None",
+
                 "validation_error":
-                    prediction_result[
-                        "validation_error"
-                    ],
+                    prediction_result.get(
+                        "validation_error",
+                        "Please enter a valid website URL."
+                    ),
+
                 "reasons":
-                    prediction_result[
-                        "reasons"
-                    ],
-                "actions":
-                    prediction_result[
-                        "recommended_actions"
-                    ],
-                "warnings": [],
-                "url_segments": [],
+                    prediction_result.get(
+                        "reasons",
+                        []
+                    ),
+
+                "recommended_module":
+                    None,
+
+                "recommended_modules":
+                    []
             }
 
-            return render_template(
-                "url_scanner.html",
-                result=result
+        # -------------------------------------------------
+        # VALID URL
+        # -------------------------------------------------
+
+        else:
+
+            prediction = (
+                prediction_result["prediction"]
             )
 
-        result = {
-            "input_type": "URL",
-            "submitted_content":
-                submitted_content,
-
-            "is_valid": True,
-
-            "prediction":
-                prediction_result[
-                    "prediction"
-                ],
-
-            "confidence": round(
-                prediction_result[
-                    "confidence"
-                ],
+            confidence = round(
+                float(
+                    prediction_result["confidence"]
+                ),
                 2
-            ),
+            )
 
-            "risk_level":
-                prediction_result[
-                    "risk_level"
-                ],
+            legitimate_probability = round(
+                float(
+                    prediction_result.get(
+                        "legitimate_probability",
+                        0
+                    )
+                ),
+                2
+            )
 
-            "decision_source":
-                prediction_result[
-                    "decision_source"
-                ],
+            malicious_probability = round(
+                float(
+                    prediction_result.get(
+                        "malicious_probability",
+                        0
+                    )
+                ),
+                2
+            )
 
-            "model_prediction":
-                prediction_result[
-                    "model_prediction"
-                ],
+            model_display_prediction = (
+                prediction
+            )
 
-            "model_display_prediction":
-                prediction_result[
-                    "model_display_prediction"
-                ],
+            model_confidence = (
+                confidence
+            )
 
-            "model_confidence":
-                prediction_result[
-                    "model_confidence"
-                ],
+            decision_source = (
+                "Machine-Learning Model"
+            )
 
-            "legitimate_probability":
-                prediction_result[
-                    "legitimate_probability"
-                ],
+            actions = prediction_result.get(
+                "recommended_actions",
+                []
+            )
 
-            "malicious_probability":
-                prediction_result[
-                    "malicious_probability"
-                ],
+            if not actions:
 
-            "class_probabilities":
-                prediction_result[
-                    "class_probabilities"
-                ],
+                if prediction == "Malicious":
 
-            "reasons":
-                prediction_result[
-                    "reasons"
-                ],
+                    actions = [
+                        "Do not enter passwords, banking details or personal information.",
+                        "Avoid downloading files from the website.",
+                        "Do not continue using the link unless you can verify it.",
+                        "Report the URL if you believe it is fraudulent or harmful."
+                    ]
 
-            "warnings":
-                prediction_result[
-                    "warnings"
-                ],
+                else:
 
-            "actions":
-                prediction_result[
-                    "recommended_actions"
-                ],
+                    actions = [
+                        "Continue to exercise normal online security precautions.",
+                        "Check the website address before entering sensitive information.",
+                        "Avoid downloading unexpected files."
+                    ]
 
-            "url_segments":
-                prediction_result[
-                    "url_segments"
-                ],
+            result = {
 
-            "hostname":
-                prediction_result[
-                    "hostname"
-                ],
+                "input_type":
+                    "URL",
 
-            "normalised_url":
-                prediction_result[
-                    "normalised_url"
-                ],
-        }
+                "submitted_content":
+                    submitted_content,
 
-        save_detection(
-            "URL",
-            submitted_content,
-            prediction_result,
-        )
+                "prediction":
+                    prediction,
+
+                "confidence":
+                    confidence,
+
+                "risk_level":
+                    prediction_result["risk_level"],
+
+                "model_display_prediction":
+                    model_display_prediction,
+
+                "model_confidence":
+                    model_confidence,
+
+                "decision_source":
+                    decision_source,
+
+                "legitimate_probability":
+                    legitimate_probability,
+
+                "malicious_probability":
+                    malicious_probability,
+
+                "reasons":
+                    prediction_result.get(
+                        "reasons",
+                        []
+                    ),
+
+                "actions":
+                    actions,
+
+                "warnings":
+                    prediction_result.get(
+                        "warnings",
+                        []
+                    ),
+
+                "normalised_url":
+                    prediction_result.get(
+                        "normalised_url"
+                    ),
+
+                "url_segments":
+                    prediction_result.get(
+                        "url_segments",
+                        []
+                    ),
+
+                "recommended_module":
+                    recommended_module,
+
+                "recommended_modules":
+                    recommended_modules
+            }
+
+
+            save_detection(
+                input_type="URL",
+                submitted_content=submitted_content,
+                prediction_result=prediction_result,
+            )
 
     return render_template(
         "url_scanner.html",
@@ -685,23 +1394,35 @@ def url_scanner():
 
 
 @app.route("/history")
-@login_required
+@user_required
 def history():
 
     conn = get_db_connection()
+
     cursor = conn.cursor(
         dictionary=True
     )
 
+    user_id = session["user_id"]
+
+
     cursor.execute(
         """
-        SELECT *
+        SELECT
+            detection_id,
+            input_type,
+            submitted_content,
+            prediction,
+            confidence_score,
+            risk_level,
+            explanation,
+            scan_date
         FROM detections
         WHERE user_id = %s
         ORDER BY scan_date DESC
         """,
         (
-            session["user_id"],
+            user_id,
         )
     )
 
@@ -709,12 +1430,95 @@ def history():
         cursor.fetchall()
     )
 
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM detections
+        WHERE user_id = %s
+        """,
+        (
+            user_id,
+        )
+    )
+
+    total_history = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM detections
+        WHERE user_id = %s
+          AND input_type = 'Email'
+        """,
+        (
+            user_id,
+        )
+    )
+
+    email_count = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM detections
+        WHERE user_id = %s
+          AND input_type = 'SMS'
+        """,
+        (
+            user_id,
+        )
+    )
+
+    sms_count = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM detections
+        WHERE user_id = %s
+          AND input_type = 'URL'
+        """,
+        (
+            user_id,
+        )
+    )
+
+    url_count = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+
     cursor.close()
+
     conn.close()
+
 
     return render_template(
         "history.html",
-        detections=detections
+
+        detections=detections,
+
+        total_history=total_history,
+
+        email_count=email_count,
+
+        sms_count=sms_count,
+
+        url_count=url_count,
     )
 
 
@@ -725,37 +1529,50 @@ def history():
         "POST"
     ]
 )
-@login_required
+@user_required
 def report_scam():
 
     success = False
 
-    report_type = (
-        request.form.get(
+    user_id = session["user_id"]
+
+
+    report_type = request.form.get(
+        "report_type",
+        request.args.get(
             "report_type",
-            request.args.get(
-                "report_type",
-                "SMS"
-            )
+            "SMS"
         )
     )
 
-    reported_content = (
-        request.form.get(
+
+    reported_content = request.form.get(
+        "reported_content",
+        request.args.get(
             "reported_content",
-            request.args.get(
-                "reported_content",
-                ""
-            )
-        )
-    )
-
-    description = (
-        request.form.get(
-            "description",
             ""
         )
     )
+
+
+    description = request.form.get(
+        "description",
+        ""
+    )
+
+
+    
+
+    allowed_report_types = {
+        "Email",
+        "SMS",
+        "URL"
+    }
+
+
+    if report_type not in allowed_report_types:
+        report_type = "SMS"
+
 
     if (
         request.method == "POST"
@@ -764,50 +1581,184 @@ def report_scam():
         ) == "true"
     ):
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            INSERT INTO scam_reports
-            (
-                user_id,
-                report_type,
-                reported_content,
-                description
-            )
-            VALUES (%s, %s, %s, %s)
-            """,
-            (
-                session["user_id"],
-                report_type,
-                reported_content,
-                description,
-            )
+        reported_content = (
+            reported_content.strip()
         )
 
-        conn.commit()
-        cursor.close()
-        conn.close()
+        description = (
+            description.strip()
+        )
 
-        success = True
 
-        report_type = "SMS"
-        reported_content = ""
-        description = ""
+        if not reported_content:
 
-    return render_template(
-        "report_scam.html",
-        success=success,
-        report_type=report_type,
-        reported_content=reported_content,
-        description=description,
+            flash(
+                "Please enter the suspicious content you want to report.",
+                "error"
+            )
+
+        else:
+
+            conn = get_db_connection()
+
+            cursor = conn.cursor()
+
+
+            cursor.execute(
+                """
+                INSERT INTO scam_reports
+                (
+                    user_id,
+                    report_type,
+                    reported_content,
+                    description
+                )
+                VALUES
+                (
+                    %s,
+                    %s,
+                    %s,
+                    %s
+                )
+                """,
+                (
+                    user_id,
+                    report_type,
+                    reported_content,
+                    description,
+                )
+            )
+
+
+            conn.commit()
+
+            cursor.close()
+
+            conn.close()
+
+
+            success = True
+
+            report_type = "SMS"
+
+            reported_content = ""
+
+            description = ""
+
+
+    conn = get_db_connection()
+
+    cursor = conn.cursor(
+        dictionary=True
     )
 
 
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM scam_reports
+        WHERE user_id = %s
+        """,
+        (
+            user_id,
+        )
+    )
+
+    total_reports = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM scam_reports
+        WHERE user_id = %s
+          AND status = 'Pending'
+        """,
+        (
+            user_id,
+        )
+    )
+
+    pending_reports = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM scam_reports
+        WHERE user_id = %s
+          AND status = 'Confirmed Scam'
+        """,
+        (
+            user_id,
+        )
+    )
+
+    confirmed_reports = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+
+    cursor.execute(
+        """
+        SELECT
+            report_id,
+            report_type,
+            reported_content,
+            status,
+            report_date
+        FROM scam_reports
+        WHERE user_id = %s
+        ORDER BY report_date DESC
+        LIMIT 3
+        """,
+        (
+            user_id,
+        )
+    )
+
+    recent_reports = (
+        cursor.fetchall()
+    )
+
+
+    cursor.close()
+
+    conn.close()
+
+
+    return render_template(
+        "report_scam.html",
+
+        success=success,
+
+        report_type=report_type,
+
+        reported_content=reported_content,
+
+        description=description,
+
+        total_reports=total_reports,
+
+        pending_reports=pending_reports,
+
+        confirmed_reports=confirmed_reports,
+
+        recent_reports=recent_reports,
+    )
+
 @app.route("/awareness")
-@login_required
+@user_required
 def awareness():
+
+    user_id = session["user_id"]
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -820,70 +1771,62 @@ def awareness():
             lm.description,
             lm.icon,
             lm.display_order,
-
-            COUNT(DISTINCT ll.lesson_id) AS lesson_count,
-
-            COALESCE(
-                ulp.lessons_completed,
-                0
-            ) AS lessons_completed,
-
             COALESCE(
                 ulp.best_quiz_score,
                 0
             ) AS best_quiz_score,
-
             COALESCE(
                 ulp.module_completed,
                 0
             ) AS module_completed
-
         FROM learning_modules lm
-
-        LEFT JOIN learning_lessons ll
-            ON ll.module_id = lm.module_id
-
         LEFT JOIN user_learning_progress ulp
             ON ulp.module_id = lm.module_id
             AND ulp.user_id = %s
-
-        GROUP BY
-            lm.module_id,
-            lm.title,
-            lm.category,
-            lm.description,
-            lm.icon,
-            lm.display_order,
-            ulp.lessons_completed,
-            ulp.best_quiz_score,
-            ulp.module_completed
-
         ORDER BY lm.display_order
     """, (
-        session["user_id"],
+        user_id,
     ))
 
     modules = cursor.fetchall()
 
-    cursor.execute("""
-        SELECT
-            ROUND(
-                AVG(best_quiz_score),
-                2
-            ) AS awareness_score
-        FROM user_learning_progress
-        WHERE user_id = %s
-    """, (
-        session["user_id"],
-    ))
-
-    awareness_score = (
-        cursor.fetchone()["awareness_score"]
-        or 0
-    )
-
     cursor.close()
     conn.close()
+
+    for module in modules:
+
+        progress = get_module_progress(
+            user_id,
+            module["module_id"],
+        )
+
+        module["lesson_count"] = (
+            progress["total_lessons"]
+        )
+
+        module["lessons_completed"] = (
+            progress["completed_lessons"]
+        )
+
+        module["progress_percentage"] = (
+            progress["progress_percentage"]
+        )
+
+    scored_modules = [
+        float(module["best_quiz_score"])
+        for module in modules
+        if float(module["best_quiz_score"]) > 0
+    ]
+
+    awareness_score = (
+        round(
+            sum(scored_modules)
+            / len(scored_modules),
+            2
+        )
+        if scored_modules
+        else 0
+    )
 
     return render_template(
         "awareness.html",
@@ -891,15 +1834,17 @@ def awareness():
         awareness_score=awareness_score,
     )
 
-
 @app.route("/scam-reports")
-@login_required
+@user_required
 def scam_reports():
 
     conn = get_db_connection()
+
     cursor = conn.cursor(
         dictionary=True
     )
+
+    user_id = session["user_id"]
 
     cursor.execute(
         """
@@ -915,37 +1860,244 @@ def scam_reports():
         ORDER BY report_date DESC
         """,
         (
-            session["user_id"],
+            user_id,
         )
     )
 
-    reports = (
-        cursor.fetchall()
+    reports = cursor.fetchall()
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM scam_reports
+        WHERE user_id = %s
+        """,
+        (
+            user_id,
+        )
     )
+
+    total_reports = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM scam_reports
+        WHERE user_id = %s
+          AND status = 'Pending'
+        """,
+        (
+            user_id,
+        )
+    )
+
+    pending_reports = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM scam_reports
+        WHERE user_id = %s
+          AND status = 'Reviewed'
+        """,
+        (
+            user_id,
+        )
+    )
+
+    reviewed_reports = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM scam_reports
+        WHERE user_id = %s
+          AND status = 'Confirmed Scam'
+        """,
+        (
+            user_id,
+        )
+    )
+
+    confirmed_reports = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+
+    cursor.close()
+
+    conn.close()
+
+
+    return render_template(
+        "scam_reports.html",
+
+        reports=reports,
+
+        total_reports=total_reports,
+
+        pending_reports=pending_reports,
+
+        reviewed_reports=reviewed_reports,
+
+        confirmed_reports=confirmed_reports,
+    )
+
+
+# =========================================================
+# ADMIN - VIEW ALL SCAM REPORTS
+# =========================================================
+
+@app.route("/admin/scam-reports")
+@admin_required
+def admin_scam_reports():
+
+    conn = get_db_connection()
+
+    cursor = conn.cursor(
+        dictionary=True
+    )
+
+
+    cursor.execute(
+        """
+        SELECT
+            sr.report_id,
+            sr.user_id,
+            sr.report_type,
+            sr.reported_content,
+            sr.description,
+            sr.status,
+            sr.report_date,
+
+            u.first_name,
+            u.last_name,
+            u.email
+
+        FROM scam_reports sr
+
+        INNER JOIN users u
+            ON u.user_id = sr.user_id
+
+        ORDER BY sr.report_date DESC
+        """
+    )
+
+    reports = cursor.fetchall()
+
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM scam_reports
+        """
+    )
+
+    total_reports = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM scam_reports
+        WHERE status = 'Pending'
+        """
+    )
+
+    pending_reports = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM scam_reports
+        WHERE status = 'Reviewed'
+        """
+    )
+
+    reviewed_reports = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM scam_reports
+        WHERE status = 'Confirmed Scam'
+        """
+    )
+
+    confirmed_reports = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM scam_reports
+        WHERE status = 'Not a Scam'
+        """
+    )
+
+    not_scam_reports = (
+        cursor.fetchone()["total"]
+        or 0
+    )
+
 
     cursor.close()
     conn.close()
 
+
     return render_template(
-        "scam_reports.html",
-        reports=reports
+        "admin_side_scam_reports.html",
+
+        reports=reports,
+
+        total_reports=total_reports,
+
+        pending_reports=pending_reports,
+
+        reviewed_reports=reviewed_reports,
+
+        confirmed_reports=confirmed_reports,
+
+        not_scam_reports=not_scam_reports,
     )
 
 
 @app.route(
-    "/scam-reports/<int:report_id>/status",
+    "/admin/scam-reports/<int:report_id>/status",
     methods=["POST"]
 )
-@login_required
-def update_report_status(
+@admin_required
+def admin_update_report_status(
     report_id
 ):
 
-    new_status = (
-        request.form.get(
-            "status"
-        )
+    new_status = request.form.get(
+        "status",
+        ""
     )
+
 
     allowed_statuses = {
         "Pending",
@@ -954,42 +2106,57 @@ def update_report_status(
         "Not a Scam",
     }
 
-    if (
-        new_status
-        not in allowed_statuses
-    ):
-        return (
-            "Invalid status",
-            400
+
+    if new_status not in allowed_statuses:
+
+        flash(
+            "Invalid report status.",
+            "error"
         )
 
+        return redirect(
+            url_for(
+                "admin_scam_reports"
+            )
+        )
+
+
     conn = get_db_connection()
+
     cursor = conn.cursor()
+
 
     cursor.execute(
         """
         UPDATE scam_reports
         SET status = %s
         WHERE report_id = %s
-        AND user_id = %s
         """,
         (
             new_status,
             report_id,
-            session["user_id"],
         )
     )
 
+
     conn.commit()
+
     cursor.close()
+
     conn.close()
+
+
+    flash(
+        "Report status updated successfully.",
+        "success"
+    )
+
 
     return redirect(
         url_for(
-            "scam_reports"
+            "admin_scam_reports"
         )
     )
-
 
 @app.route(
     "/register",
@@ -1170,6 +2337,7 @@ def login():
             ]
         )
 
+
         connection = (
             get_db_connection()
         )
@@ -1179,6 +2347,7 @@ def login():
                 dictionary=True
             )
         )
+
 
         cursor.execute(
             """
@@ -1197,12 +2366,15 @@ def login():
             )
         )
 
+
         user = (
             cursor.fetchone()
         )
 
+
         cursor.close()
         connection.close()
+
 
         if (
             user
@@ -1216,11 +2388,13 @@ def login():
 
             session.clear()
 
+
             session[
                 "user_id"
             ] = user[
                 "user_id"
             ]
+
 
             session[
                 "first_name"
@@ -1228,11 +2402,26 @@ def login():
                 "first_name"
             ]
 
+
             session[
                 "role"
             ] = user[
                 "role"
             ]
+            if (
+                str(
+                    user["role"]
+                )
+                .strip()
+                .lower()
+                == "admin"
+            ):
+
+                return redirect(
+                    url_for(
+                        "admin_scam_reports"
+                    )
+                )
 
             return redirect(
                 url_for(
@@ -1240,10 +2429,12 @@ def login():
                 )
             )
 
+
         flash(
             "Invalid email address or password.",
             "error"
         )
+
 
     return render_template(
         "login.html"
@@ -1267,8 +2458,10 @@ def logout():
     )
 
 @app.route("/learning/module/<int:module_id>")
-@login_required
+@user_required
 def learning_module(module_id):
+
+    user_id = session["user_id"]
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -1300,20 +2493,20 @@ def learning_module(module_id):
                 0
             ) AS completed
         FROM learning_lessons ll
-
         LEFT JOIN user_lesson_progress ulp
             ON ulp.lesson_id = ll.lesson_id
             AND ulp.user_id = %s
-
         WHERE ll.module_id = %s
-
         ORDER BY ll.display_order
     """, (
-        session["user_id"],
+        user_id,
         module_id,
     ))
 
     lessons = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
 
     total_lessons = len(lessons)
 
@@ -1328,8 +2521,17 @@ def learning_module(module_id):
         and completed_lessons == total_lessons
     )
 
-    cursor.close()
-    conn.close()
+    progress_percentage = (
+        round(
+            (
+                completed_lessons
+                / total_lessons
+            ) * 100,
+            2
+        )
+        if total_lessons > 0
+        else 0
+    )
 
     return render_template(
         "learning_module.html",
@@ -1338,11 +2540,198 @@ def learning_module(module_id):
         total_lessons=total_lessons,
         completed_lessons=completed_lessons,
         all_lessons_completed=all_lessons_completed,
+        progress_percentage=progress_percentage,
     )
 
+
+@app.route(
+    "/learning/module/<int:module_id>/lesson/<int:lesson_id>/complete",
+    methods=["POST"]
+)
+@user_required
+def complete_learning_lesson(module_id, lesson_id):
+
+    user_id = session["user_id"]
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT lesson_id
+        FROM learning_lessons
+        WHERE lesson_id = %s
+          AND module_id = %s
+    """, (
+        lesson_id,
+        module_id,
+    ))
+
+    lesson = cursor.fetchone()
+
+    if not lesson:
+        cursor.close()
+        conn.close()
+
+        return {
+            "success": False,
+            "message": "Lesson not found."
+        }, 404
+
+    cursor.close()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO user_lesson_progress
+        (
+            user_id,
+            lesson_id,
+            completed,
+            completed_at
+        )
+        VALUES
+        (
+            %s,
+            %s,
+            1,
+            NOW()
+        )
+        ON DUPLICATE KEY UPDATE
+            completed = 1,
+            completed_at = NOW()
+    """, (
+        user_id,
+        lesson_id,
+    ))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    progress = get_module_progress(
+        user_id,
+        module_id,
+    )
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO user_learning_progress
+        (
+            user_id,
+            module_id,
+            lessons_completed,
+            module_completed,
+            best_quiz_score
+        )
+        VALUES
+        (
+            %s,
+            %s,
+            %s,
+            0,
+            0
+        )
+        ON DUPLICATE KEY UPDATE
+            lessons_completed = %s
+    """, (
+        user_id,
+        module_id,
+        progress["completed_lessons"],
+        progress["completed_lessons"],
+    ))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {
+        "success": True,
+        "completed_lessons":
+            progress["completed_lessons"],
+        "total_lessons":
+            progress["total_lessons"],
+        "progress_percentage":
+            progress["progress_percentage"],
+        "all_lessons_completed":
+            progress["all_lessons_completed"],
+    }
+
+
+@app.route(
+    "/learning/module/<int:module_id>/restart",
+    methods=["POST"]
+)
+@user_required
+def restart_learning_module(module_id):
+
+    user_id = session["user_id"]
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE ulp
+        FROM user_lesson_progress ulp
+        INNER JOIN learning_lessons ll
+            ON ll.lesson_id = ulp.lesson_id
+        WHERE ulp.user_id = %s
+          AND ll.module_id = %s
+    """, (
+        user_id,
+        module_id,
+    ))
+
+    cursor.execute("""
+        DELETE FROM user_learning_progress
+        WHERE user_id = %s
+          AND module_id = %s
+    """, (
+        user_id,
+        module_id,
+    ))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash(
+        "Module progress has been restarted.",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "learning_module",
+            module_id=module_id,
+        )
+    )
+
+
 @app.route("/learning/module/<int:module_id>/quiz")
-@login_required
+@user_required
 def module_quiz(module_id):
+
+    user_id = session["user_id"]
+
+    progress = get_module_progress(
+        user_id,
+        module_id,
+    )
+
+    if not progress["all_lessons_completed"]:
+
+        flash(
+            "Complete all lessons before taking the quiz.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "learning_module",
+                module_id=module_id,
+            )
+        )
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -1389,12 +2778,34 @@ def module_quiz(module_id):
         questions=questions,
     )
 
+
 @app.route(
     "/learning/module/<int:module_id>/quiz/submit",
     methods=["POST"]
 )
-@login_required
+@user_required
 def submit_module_quiz(module_id):
+
+    user_id = session["user_id"]
+
+    progress = get_module_progress(
+        user_id,
+        module_id,
+    )
+
+    if not progress["all_lessons_completed"]:
+
+        flash(
+            "Complete all lessons before submitting the quiz.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "learning_module",
+                module_id=module_id,
+            )
+        )
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -1433,6 +2844,22 @@ def submit_module_quiz(module_id):
 
     questions = cursor.fetchall()
 
+    if not questions:
+        cursor.close()
+        conn.close()
+
+        flash(
+            "This module does not have quiz questions yet.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "learning_module",
+                module_id=module_id,
+            )
+        )
+
     score = 0
     results = []
 
@@ -1442,7 +2869,9 @@ def submit_module_quiz(module_id):
             f"question_{question['question_id']}"
         )
 
-        correct_option = question["correct_option"]
+        correct_option = (
+            question["correct_option"]
+        )
 
         is_correct = (
             selected_option == correct_option
@@ -1461,27 +2890,21 @@ def submit_module_quiz(module_id):
         results.append({
             "question_text":
                 question["question_text"],
-
             "selected_option":
                 selected_option,
-
             "selected_answer":
                 option_lookup.get(
                     selected_option,
                     "No answer"
                 ),
-
             "correct_option":
                 correct_option,
-
             "correct_answer":
                 option_lookup[
                     correct_option
                 ],
-
             "is_correct":
                 is_correct,
-
             "explanation":
                 question["explanation"],
         })
@@ -1490,15 +2913,22 @@ def submit_module_quiz(module_id):
         questions
     )
 
-    percentage = (
-        (score / total_questions) * 100
-        if total_questions > 0
-        else 0
+    percentage = round(
+        (
+            score
+            / total_questions
+        ) * 100,
+        2
     )
 
-    insert_cursor = conn.cursor()
+    passed = (
+        percentage >= 70
+    )
 
-    insert_cursor.execute("""
+    cursor.close()
+    cursor = conn.cursor()
+
+    cursor.execute("""
         INSERT INTO quiz_attempts
         (
             user_id,
@@ -1507,16 +2937,23 @@ def submit_module_quiz(module_id):
             total_questions,
             percentage
         )
-        VALUES (%s, %s, %s, %s, %s)
+        VALUES
+        (
+            %s,
+            %s,
+            %s,
+            %s,
+            %s
+        )
     """, (
-        session["user_id"],
+        user_id,
         module_id,
         score,
         total_questions,
         percentage,
     ))
 
-    insert_cursor.execute("""
+    cursor.execute("""
         INSERT INTO user_learning_progress
         (
             user_id,
@@ -1525,38 +2962,38 @@ def submit_module_quiz(module_id):
             module_completed,
             best_quiz_score
         )
-        VALUES (%s, %s, %s, %s, %s)
-
+        VALUES
+        (
+            %s,
+            %s,
+            %s,
+            %s,
+            %s
+        )
         ON DUPLICATE KEY UPDATE
-
-            lessons_completed =
-                GREATEST(
-                    lessons_completed,
-                    VALUES(lessons_completed)
-                ),
-
+            lessons_completed = %s,
             module_completed =
                 GREATEST(
                     module_completed,
-                    VALUES(module_completed)
+                    %s
                 ),
-
             best_quiz_score =
                 GREATEST(
                     best_quiz_score,
-                    VALUES(best_quiz_score)
+                    %s
                 )
     """, (
-        session["user_id"],
+        user_id,
         module_id,
-        5,
-        percentage >= 70,
+        progress["completed_lessons"],
+        int(passed),
+        percentage,
+        progress["completed_lessons"],
+        int(passed),
         percentage,
     ))
 
     conn.commit()
-
-    insert_cursor.close()
     cursor.close()
     conn.close()
 
@@ -1565,147 +3002,11 @@ def submit_module_quiz(module_id):
         module=module,
         score=score,
         total_questions=total_questions,
-        percentage=round(
-            percentage,
-            2
-        ),
+        percentage=percentage,
+        passed=passed,
         results=results,
     )
 
-@app.route(
-    "/learning/module/<int:module_id>/lesson/<int:lesson_id>/complete",
-    methods=["POST"]
-)
-@login_required
-def complete_learning_lesson(
-    module_id,
-    lesson_id
-):
-
-    user_id = session["user_id"]
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-
-    # Make sure this lesson actually belongs
-    # to the requested module
-    cursor.execute("""
-        SELECT lesson_id
-        FROM learning_lessons
-        WHERE lesson_id = %s
-          AND module_id = %s
-    """, (
-        lesson_id,
-        module_id,
-    ))
-
-    lesson = cursor.fetchone()
-
-
-    if not lesson:
-
-        cursor.close()
-        conn.close()
-
-        return {
-            "success": False,
-            "message": "Lesson not found."
-        }, 404
-
-
-    # Save lesson completion.
-    # If it already exists, simply keep it completed.
-    cursor.execute("""
-        INSERT INTO user_lesson_progress
-        (
-            user_id,
-            lesson_id,
-            completed,
-            completed_at
-        )
-        VALUES
-        (
-            %s,
-            %s,
-            1,
-            NOW()
-        )
-        ON DUPLICATE KEY UPDATE
-            completed = 1,
-            completed_at = COALESCE(
-                completed_at,
-                NOW()
-            )
-    """, (
-        user_id,
-        lesson_id,
-    ))
-
-    conn.commit()
-
-
-    # Calculate current module progress
-    cursor.execute("""
-        SELECT COUNT(*) AS total_lessons
-        FROM learning_lessons
-        WHERE module_id = %s
-    """, (
-        module_id,
-    ))
-
-    total_lessons = (
-        cursor.fetchone()["total_lessons"]
-        or 0
-    )
-
-
-    cursor.execute("""
-        SELECT COUNT(*) AS completed_lessons
-        FROM user_lesson_progress ulp
-        INNER JOIN learning_lessons ll
-            ON ulp.lesson_id = ll.lesson_id
-        WHERE ulp.user_id = %s
-          AND ll.module_id = %s
-          AND ulp.completed = 1
-    """, (
-        user_id,
-        module_id,
-    ))
-
-    completed_lessons = (
-        cursor.fetchone()["completed_lessons"]
-        or 0
-    )
-
-
-    cursor.close()
-    conn.close()
-
-
-    progress_percentage = 0
-
-    if total_lessons > 0:
-
-        progress_percentage = round(
-            (
-                completed_lessons
-                / total_lessons
-            ) * 100
-        )
-
-
-    return {
-        "success": True,
-        "completed_lessons": completed_lessons,
-        "total_lessons": total_lessons,
-        "progress_percentage": progress_percentage,
-        "all_lessons_completed": (
-            total_lessons > 0
-            and
-            completed_lessons == total_lessons
-        )
-    }
 
 if __name__ == "__main__":
     app.run(

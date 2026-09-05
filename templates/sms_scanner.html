@@ -1,10 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>SMS Scanner | PhishAI</title>
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
 </head>
 
 <body>
@@ -12,18 +22,48 @@
 <div class="layout">
 
     <aside class="sidebar">
+
         <h2>🛡️ PhishAI</h2>
 
         <nav>
-            <a href="/">🏠 Dashboard</a>
-            <a href="/email-scanner">📧 Email Scanner</a>
-            <a class="active" href="/sms-scanner">💬 SMS Scanner</a>
-            <a href="/url-scanner">🌐 URL Scanner</a>
-            <a href="/history">📊 Detection History</a>
-            <a href="/awareness">🧠 Awareness Centre</a>
-            <a href="/report-scam">🚩 Report Scam</a>
-            <a href="/scam-reports">📋 Reported Scams</a>
+
+            <a href="/">
+                🏠 Dashboard
+            </a>
+
+            <a href="/email-scanner">
+                📧 Email Scanner
+            </a>
+
+            <a
+                class="active"
+                href="/sms-scanner"
+            >
+                💬 SMS Scanner
+            </a>
+
+            <a href="/url-scanner">
+                🌐 URL Scanner
+            </a>
+
+            <a href="/history">
+                📊 Detection History
+            </a>
+
+            <a href="/awareness">
+                🧠 Awareness Centre
+            </a>
+
+            <a href="/report-scam">
+                🚩 Report Scam
+            </a>
+
+            <a href="/scam-reports">
+                📋 Reported Scams
+            </a>
+
         </nav>
+
 
         <div class="sidebar-user">
 
@@ -32,31 +72,52 @@
             </div>
 
             <div class="user-details">
-                <strong>{{ session.first_name }}</strong>
-                <small>{{ session.role }}</small>
+
+                <strong>
+                    {{ session.first_name }}
+                </strong>
+
+                <small>
+                    {{ session.role }}
+                </small>
+
             </div>
 
-            <a href="/logout"
-               class="logout-button"
-               title="Logout">
+            <a
+                href="/logout"
+                class="logout-button"
+                title="Logout"
+            >
                 ↪
             </a>
 
         </div>
+
     </aside>
+
 
     <main class="main-content">
 
         <header class="topbar">
-            <h1>SMS Scanner</h1>
-            <span>Analyse an SMS message for phishing or scam indicators</span>
+
+            <h1>
+                SMS Scanner
+            </h1>
+
+            <span>
+                Analyse an SMS message for phishing or scam indicators
+            </span>
+
         </header>
+
 
         <section class="scanner-grid">
 
             <div class="scan-card">
 
-                <h2>Paste an SMS message</h2>
+                <h2>
+                    Paste an SMS message
+                </h2>
 
                 <p>
                     PhishAI will analyse the text and show the prediction,
@@ -65,14 +126,18 @@
 
                 <form method="POST">
 
-                    <label>SMS Message</label>
+                    <label for="submitted_content">
+                        SMS Message
+                    </label>
 
                     <textarea
+                        id="submitted_content"
                         name="submitted_content"
                         rows="9"
                         maxlength="2000"
                         placeholder="Paste the SMS message here..."
-                        required>{{ result.submitted_content if result else "" }}</textarea>
+                        required
+                    >{{ result.submitted_content if result else "" }}</textarea>
 
                     <div class="form-footer">
 
@@ -80,74 +145,144 @@
                             Do not enter real passwords, PINs or OTPs.
                         </small>
 
-                        <button type="submit" class="scan-btn">
+                        <button
+                            type="submit"
+                            class="scan-btn"
+                        >
                             Analyse SMS
                         </button>
 
                     </div>
 
                 </form>
+
             </div>
+
 
             <div class="scan-help">
 
                 <div class="ai-graphic small">
-                    <div class="shield">🛡️</div>
-                    <p>SMS Threat Analysis</p>
+
+                    <div class="shield">
+                        💬
+                    </div>
+
+                    <p>
+                        SMS Threat Analysis
+                    </p>
+
                 </div>
 
-                <h3>Common warning signs</h3>
+                <h3>
+                    Common warning signs
+                </h3>
 
                 <ul>
-                    <li>Urgent or threatening language</li>
-                    <li>Unexpected prizes or rewards</li>
-                    <li>Requests for banking information</li>
-                    <li>Suspicious or shortened links</li>
-                    <li>Pressure to respond immediately</li>
+
+                    <li>
+                        Urgent or threatening language
+                    </li>
+
+                    <li>
+                        Unexpected prizes or rewards
+                    </li>
+
+                    <li>
+                        Requests for banking information
+                    </li>
+
+                    <li>
+                        Suspicious or shortened links
+                    </li>
+
+                    <li>
+                        Pressure to respond immediately
+                    </li>
+
                 </ul>
 
             </div>
 
         </section>
 
+
         {% if result %}
 
-        <section class="result-panel">
+        <section
+            class="result-panel"
+            id="detection-result"
+        >
 
             <div class="result-header">
 
-                <h2>Detection Result</h2>
+                <h2>
+                    Detection Result
+                </h2>
 
-                <span class="badge {{ result.risk_level|lower }}">
+                <span
+                    class="badge {{ result.risk_level|lower }}"
+                >
                     {{ result.risk_level }} Risk
                 </span>
 
             </div>
 
+
             <div class="result-cards">
 
                 <div class="mini-card">
-                    <h3>Prediction</h3>
-                    <p>{{ result.prediction }}</p>
+
+                    <h3>
+                        Prediction
+                    </h3>
+
+                    <p>
+                        {{ result.prediction }}
+                    </p>
+
                 </div>
 
-                <div class="mini-card">
-                    <h3>Confidence</h3>
-                    <p>{{ result.confidence }}%</p>
-                </div>
 
                 <div class="mini-card">
-                    <h3>Content Type</h3>
-                    <p>SMS</p>
+
+                    <h3>
+                        Confidence
+                    </h3>
+
+                    <p>
+                        {{ result.confidence }}%
+                    </p>
+
+                </div>
+
+
+                <div class="mini-card">
+
+                    <h3>
+                        Content Type
+                    </h3>
+
+                    <p>
+                        SMS
+                    </p>
+
                 </div>
 
             </div>
 
+
             <div class="risk-meter-container">
 
                 <div class="risk-meter-header">
-                    <h3>AI Risk Score</h3>
-                    <span>{{ result.confidence }}%</span>
+
+                    <h3>
+                        AI Risk Score
+                    </h3>
+
+                    <span>
+                        {{ result.confidence }}%
+                    </span>
+
                 </div>
 
                 <div class="risk-bar">
@@ -161,60 +296,231 @@
                         {% else %}
                             low
                         {% endif %}"
-                        style="width: {{ result.confidence }}%;">
+                        style="width: {{ result.confidence }}%;"
+                    >
                     </div>
 
                 </div>
 
             </div>
 
+
             <div class="insight-grid">
 
                 <div class="analysis-box">
 
-                    <h3>🧠 Why was it classified this way?</h3>
+                    <h3>
+                        🧠 Why was it classified this way?
+                    </h3>
 
                     <ul>
+
                         {% for reason in result.reasons %}
-                        <li>{{ reason }}</li>
+
+                            <li>
+                                {{ reason }}
+                            </li>
+
                         {% endfor %}
+
                     </ul>
 
                 </div>
 
+
                 <div class="analysis-box">
 
-                    <h3>⚠️ Recommended Action</h3>
+                    <h3>
+                        ⚠️ Recommended Action
+                    </h3>
 
                     <ul>
+
                         {% for action in result.actions %}
-                        <li>{{ action }}</li>
+
+                            <li>
+                                {{ action }}
+                            </li>
+
                         {% endfor %}
+
                     </ul>
 
                 </div>
 
             </div>
 
+
+            <!-- =================================================
+                 SMART LEARNING RECOMMENDATIONS
+            ================================================== -->
+
+            {% if result.recommended_modules %}
+
+                <section class="smart-learning-section">
+
+                    <div class="smart-learning-heading">
+
+                        <span class="scanner-learning-label">
+                            PERSONALISED LEARNING
+                        </span>
+
+                        <h2>
+                            Recommended for this threat
+                        </h2>
+
+                        <p>
+                            Based on the type and content of this message,
+                            these learning modules can help you understand
+                            the risks involved.
+                        </p>
+
+                    </div>
+
+
+                    <div class="smart-learning-grid">
+
+                        {% for module in result.recommended_modules %}
+
+                            <article
+                                class="smart-learning-card
+                                {% if loop.first %}
+                                    primary-learning-card
+                                {% endif %}"
+                            >
+
+                                <div class="smart-learning-card-top">
+
+                                    <div class="smart-learning-module-icon">
+                                        {{ module.icon }}
+                                    </div>
+
+
+                                    {% if loop.first %}
+
+                                        <span class="primary-recommendation-badge">
+                                            PRIMARY
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="secondary-recommendation-badge">
+                                            RELATED
+                                        </span>
+
+                                    {% endif %}
+
+                                </div>
+
+
+                                <span class="smart-learning-category">
+                                    {{ module.category }}
+                                </span>
+
+
+                                <h3>
+                                    {{ module.title }}
+                                </h3>
+
+
+                                <p>
+                                    {{ module.description }}
+                                </p>
+
+
+                                <a
+                                    href="{{ url_for(
+                                        'learning_module',
+                                        module_id=module.module_id
+                                    ) }}"
+                                    class="smart-learning-button"
+                                >
+                                    Start Learning →
+                                </a>
+
+                            </article>
+
+                        {% endfor %}
+
+                    </div>
+
+                </section>
+
+
+            {% elif result.recommended_module %}
+
+                <section class="scanner-learning-recommendation">
+
+                    <div class="scanner-learning-icon">
+                        {{ result.recommended_module.icon }}
+                    </div>
+
+                    <div class="scanner-learning-content">
+
+                        <span class="scanner-learning-label">
+                            RECOMMENDED LEARNING
+                        </span>
+
+                        <h3>
+                            Learn more about
+                            {{ result.recommended_module.title }}
+                        </h3>
+
+                        <p>
+                            {{ result.recommended_module.description }}
+                        </p>
+
+                    </div>
+
+                    <a
+                        href="{{ url_for(
+                            'learning_module',
+                            module_id=result.recommended_module.module_id
+                        ) }}"
+                        class="scanner-learning-button"
+                    >
+                        Start Learning →
+                    </a>
+
+                </section>
+
+            {% endif %}
+
+
             {% if result.prediction in ["Phishing", "Suspicious"] %}
 
-            <form method="POST"
-                  action="/report-scam"
-                  class="report-result-form">
+                <form
+                    method="POST"
+                    action="/report-scam"
+                    class="report-result-form"
+                >
 
-                <input type="hidden"
-                       name="report_type"
-                       value="SMS">
+                    <input
+                        type="hidden"
+                        name="submit_report"
+                        value="true"
+                    >
 
-                <input type="hidden"
-                       name="reported_content"
-                       value="{{ result.submitted_content }}">
+                    <input
+                        type="hidden"
+                        name="report_type"
+                        value="SMS"
+                    >
 
-                <button type="submit" class="report-btn">
-                    🚩 Report This Scam
-                </button>
+                    <input
+                        type="hidden"
+                        name="reported_content"
+                        value="{{ result.submitted_content }}"
+                    >
 
-            </form>
+                    <button
+                        type="submit"
+                        class="report-btn"
+                    >
+                        🚩 Report This Scam
+                    </button>
+
+                </form>
 
             {% endif %}
 
@@ -226,5 +532,36 @@
 
 </div>
 
+
+{% if result %}
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const resultSection =
+            document.getElementById(
+                "detection-result"
+            );
+
+        if (resultSection) {
+
+            resultSection.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+
+        }
+
+    }
+);
+
+</script>
+
+{% endif %}
+
 </body>
+
 </html>

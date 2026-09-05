@@ -11,7 +11,7 @@
     >
 
     <title>
-        Reported Scams | PhishAI
+        Scam Report Review | PhishAI
     </title>
 
     <link
@@ -27,57 +27,25 @@
 <div class="layout">
 
 
+    <!-- =====================================================
+         ADMIN SIDEBAR
+    ====================================================== -->
+
     <aside class="sidebar">
 
         <h2>
             🛡️ PhishAI
         </h2>
 
+
         <nav>
-
-            <a href="/">
-                🏠 Dashboard
-            </a>
-
-            <a href="/email-scanner">
-                📧 Email Scanner
-            </a>
-
-            <a href="/sms-scanner">
-                💬 SMS Scanner
-            </a>
-
-            <a href="/url-scanner">
-                🌐 URL Scanner
-            </a>
-
-            <a href="/history">
-                📊 Detection History
-            </a>
-
-            <a href="/awareness">
-                🧠 Awareness Centre
-            </a>
-
-            <a href="/report-scam">
-                🚩 Report Scam
-            </a>
 
             <a
                 class="active"
-                href="/scam-reports"
+                href="/admin/scam-reports"
             >
-                📋 Reported Scams
+                📋 Manage Scam Reports
             </a>
-
-
-            {% if session.role|lower == "admin" %}
-
-                <a href="/admin/scam-reports">
-                    🛡️ Admin Review
-                </a>
-
-            {% endif %}
 
         </nav>
 
@@ -85,9 +53,7 @@
         <div class="sidebar-user">
 
             <div class="user-avatar">
-
                 {{ session.first_name[0]|upper }}
-
             </div>
 
 
@@ -98,7 +64,7 @@
                 </strong>
 
                 <small>
-                    {{ session.role }}
+                    Administrator
                 </small>
 
             </div>
@@ -118,22 +84,34 @@
 
 
 
+    <!-- =====================================================
+         ADMIN MAIN CONTENT
+    ====================================================== -->
+
     <main class="main-content">
 
+
+        <!-- =================================================
+             HEADER
+        ================================================== -->
 
         <header class="topbar">
 
             <h1>
-                Reported Scams
+                Scam Report Management
             </h1>
 
             <span>
-                Track the scam reports you have submitted
+                Review scam reports submitted by PhishAI users
             </span>
 
         </header>
 
 
+
+        <!-- =================================================
+             SUMMARY
+        ================================================== -->
 
         <section class="history-summary-grid">
 
@@ -196,7 +174,7 @@
                 </div>
 
                 <span>
-                    Confirmed Scams
+                    Confirmed Scam
                 </span>
 
                 <strong>
@@ -210,17 +188,21 @@
 
 
 
+        <!-- =================================================
+             REPORT MANAGEMENT
+        ================================================== -->
+
         <section class="history-table-panel">
 
 
             <div class="history-table-heading">
 
                 <span>
-                    YOUR REPORTS
+                    ADMINISTRATION
                 </span>
 
                 <h2>
-                    Submitted Scam Reports
+                    User Scam Reports
                 </h2>
 
             </div>
@@ -228,9 +210,14 @@
 
             {% if reports %}
 
+
                 <div class="history-table-wrapper">
 
-                    <table class="history-table enhanced-history-table">
+
+                    <table
+                        class="history-table enhanced-history-table"
+                    >
+
 
                         <thead>
 
@@ -241,11 +228,15 @@
                                 </th>
 
                                 <th>
+                                    User
+                                </th>
+
+                                <th>
                                     Type
                                 </th>
 
                                 <th>
-                                    Reported Content
+                                    Content
                                 </th>
 
                                 <th>
@@ -254,6 +245,10 @@
 
                                 <th>
                                     Status
+                                </th>
+
+                                <th>
+                                    Review
                                 </th>
 
                             </tr>
@@ -266,8 +261,11 @@
 
                             {% for report in reports %}
 
+
                                 <tr>
 
+
+                                    <!-- DATE -->
 
                                     <td class="history-date-cell">
 
@@ -275,6 +273,28 @@
 
                                     </td>
 
+
+
+                                    <!-- USER -->
+
+                                    <td>
+
+                                        <strong>
+                                            {{ report.first_name }}
+                                            {{ report.last_name }}
+                                        </strong>
+
+                                        <br>
+
+                                        <small>
+                                            {{ report.email }}
+                                        </small>
+
+                                    </td>
+
+
+
+                                    <!-- TYPE -->
 
                                     <td>
 
@@ -308,6 +328,9 @@
                                     </td>
 
 
+
+                                    <!-- CONTENT -->
+
                                     <td
                                         class="history-content-cell"
                                         title="{{ report.reported_content }}"
@@ -317,6 +340,9 @@
 
                                     </td>
 
+
+
+                                    <!-- DESCRIPTION -->
 
                                     <td
                                         class="history-explanation-cell"
@@ -336,18 +362,30 @@
                                     </td>
 
 
+
+                                    <!-- CURRENT STATUS -->
+
                                     <td>
 
                                         <span
                                             class="report-status-badge
+
                                             {% if report.status == 'Confirmed Scam' %}
+
                                                 confirmed
+
                                             {% elif report.status == 'Not a Scam' %}
+
                                                 safe
+
                                             {% elif report.status == 'Reviewed' %}
+
                                                 reviewed
+
                                             {% else %}
+
                                                 pending
+
                                             {% endif %}"
                                         >
 
@@ -358,43 +396,120 @@
                                     </td>
 
 
+
+                                    <!-- ADMIN REVIEW -->
+
+                                    <td>
+
+
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for(
+                                                'admin_update_report_status',
+                                                report_id=report.report_id
+                                            ) }}"
+                                            class="admin-report-status-form"
+                                        >
+
+
+                                            <select
+                                                name="status"
+                                                required
+                                            >
+
+
+                                                <option
+                                                    value="Pending"
+                                                    {% if report.status == "Pending" %}
+                                                        selected
+                                                    {% endif %}
+                                                >
+                                                    Pending
+                                                </option>
+
+
+                                                <option
+                                                    value="Reviewed"
+                                                    {% if report.status == "Reviewed" %}
+                                                        selected
+                                                    {% endif %}
+                                                >
+                                                    Reviewed
+                                                </option>
+
+
+                                                <option
+                                                    value="Confirmed Scam"
+                                                    {% if report.status == "Confirmed Scam" %}
+                                                        selected
+                                                    {% endif %}
+                                                >
+                                                    Confirmed Scam
+                                                </option>
+
+
+                                                <option
+                                                    value="Not a Scam"
+                                                    {% if report.status == "Not a Scam" %}
+                                                        selected
+                                                    {% endif %}
+                                                >
+                                                    Not a Scam
+                                                </option>
+
+
+                                            </select>
+
+
+                                            <button
+                                                type="submit"
+                                                class="admin-review-button"
+                                            >
+                                                Update
+                                            </button>
+
+
+                                        </form>
+
+
+                                    </td>
+
+
                                 </tr>
+
 
                             {% endfor %}
 
 
                         </tbody>
 
+
                     </table>
+
 
                 </div>
 
 
             {% else %}
 
+
                 <div class="history-empty-state">
 
                     <div>
-                        🚩
+                        ✅
                     </div>
 
                     <h3>
-                        You have not submitted any reports
+                        No scam reports to review
                     </h3>
 
                     <p>
-                        Suspicious emails, SMS messages and URLs
-                        that you report will appear here.
+                        Reports submitted by PhishAI users
+                        will appear here.
                     </p>
 
-                    <a
-                        href="/report-scam"
-                        class="primary-btn"
-                    >
-                        Report a Scam
-                    </a>
-
                 </div>
+
 
             {% endif %}
 

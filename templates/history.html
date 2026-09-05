@@ -1,134 +1,916 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>Detection History</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Detection History | PhishAI
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
 </head>
 
 <body>
+
 <div class="layout">
 
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
     <aside class="sidebar">
-        <h2>🛡️ PhishAI</h2>
+
+        <h2>
+            🛡️ PhishAI
+        </h2>
+
         <nav>
-            <a href="/">🏠 Dashboard</a>
-            <a href="/email-scanner">📧 Email Scanner</a>
-            <a href="/sms-scanner">💬 SMS Scanner</a>
-            <a href="/url-scanner">🌐 URL Scanner</a>
-            <a class="active" href="/history">📊 Detection History</a>
-           <a href="/awareness">🧠 Awareness Centre</a>
-            <a href="/report-scam">🚩 Report Scam</a>
-            <a href="#">⚙️ Settings</a>
+
+            <a href="/">
+                🏠 Dashboard
+            </a>
+
+            <a href="/email-scanner">
+                📧 Email Scanner
+            </a>
+
+            <a href="/sms-scanner">
+                💬 SMS Scanner
+            </a>
+
+            <a href="/url-scanner">
+                🌐 URL Scanner
+            </a>
+
+            <a
+                class="active"
+                href="/history"
+            >
+                📊 Detection History
+            </a>
+
+            <a href="/awareness">
+                🧠 Awareness Centre
+            </a>
+
+            <a href="/report-scam">
+                🚩 Report Scam
+            </a>
+
+            <a href="/scam-reports">
+                📋 Reported Scams
+            </a>
+
+            <a href="#">
+                ⚙️ Settings
+            </a>
+
         </nav>
+
+
         <div class="sidebar-user">
 
-                <div class="user-avatar">
-                    {{ session.first_name[0]|upper }}
-                </div>
+            <div class="user-avatar">
+                {{ session.first_name[0]|upper }}
+            </div>
 
-                <div class="user-details">
-                    <strong>{{ session.first_name }}</strong>
-                    <small>{{ session.role }}</small>
-                </div>
+            <div class="user-details">
 
-                <a href="/logout"
+                <strong>
+                    {{ session.first_name }}
+                </strong>
+
+                <small>
+                    {{ session.role }}
+                </small>
+
+            </div>
+
+            <a
+                href="/logout"
                 class="logout-button"
-                title="Logout">
-                    ↪
-                </a>
+                title="Logout"
+            >
+                ↪
+            </a>
 
         </div>
+
     </aside>
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+    ====================================================== -->
 
     <main class="main-content">
 
+
+        <!-- =================================================
+             HEADER
+        ================================================== -->
+
         <header class="topbar">
-            <h1>Detection History</h1>
-            <span>Previous scans stored in the system</span>
+
+            <h1>
+                Detection History
+            </h1>
+
+            <span>
+                Review and filter your previous PhishAI scans
+            </span>
+
         </header>
 
-        <section class="filter-panel">
-            <input type="text" id="searchInput" placeholder="Search submitted content...">
 
-            <select id="typeFilter">
-                <option value="">All Types</option>
-                <option value="Email">Email</option>
-                <option value="SMS">SMS</option>
-                <option value="URL">URL</option>
-            </select>
+        <!-- =================================================
+             HISTORY SUMMARY
+        ================================================== -->
 
-            <select id="riskFilter">
-                <option value="">All Risk Levels</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-            </select>
+        <section class="history-summary-grid">
+
+
+            <div class="history-summary-card">
+
+                <div class="history-summary-icon">
+                    🔎
+                </div>
+
+                <span>
+                    Total Scans
+                </span>
+
+                <strong>
+                    {{ total_history }}
+                </strong>
+
+            </div>
+
+
+            <div class="history-summary-card">
+
+                <div class="history-summary-icon">
+                    📧
+                </div>
+
+                <span>
+                    Email Scans
+                </span>
+
+                <strong>
+                    {{ email_count }}
+                </strong>
+
+            </div>
+
+
+            <div class="history-summary-card">
+
+                <div class="history-summary-icon">
+                    💬
+                </div>
+
+                <span>
+                    SMS Scans
+                </span>
+
+                <strong>
+                    {{ sms_count }}
+                </strong>
+
+            </div>
+
+
+            <div class="history-summary-card">
+
+                <div class="history-summary-icon">
+                    🌐
+                </div>
+
+                <span>
+                    URL Scans
+                </span>
+
+                <strong>
+                    {{ url_count }}
+                </strong>
+
+            </div>
+
+
         </section>
 
-        <table class="history-table" id="historyTable">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Type</th>
-                    <th>Prediction</th>
-                    <th>Confidence</th>
-                    <th>Risk</th>
-                    <th>Explanation</th>
-                </tr>
-            </thead>
 
-            <tbody>
-                {% for row in detections %}
-                <tr>
-                    <td>{{ row.scan_date }}</td>
-                    <td>{{ row.input_type }}</td>
-                    <td>{{ row.prediction }}</td>
-                    <td>{{ row.confidence_score }}%</td>
-                    <td>
-                        <span class="risk-badge {{ row.risk_level|lower }}">
-                            {{ row.risk_level }}
+        <!-- =================================================
+             FILTERS
+        ================================================== -->
+
+        <section class="history-filter-panel">
+
+
+            <div class="history-filter-heading">
+
+                <div>
+
+                    <span class="history-filter-label">
+                        FILTER DETECTIONS
+                    </span>
+
+                    <h2>
+                        Find a previous scan
+                    </h2>
+
+                </div>
+
+
+                <div class="history-result-counter">
+
+                    <span id="visibleResultCount">
+                        {{ detections|length }}
+                    </span>
+
+                    <small>
+                        results
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <div class="history-filter-grid">
+
+
+                <div class="history-search-field">
+
+                    <label for="searchInput">
+                        Search
+                    </label>
+
+                    <div class="history-search-wrapper">
+
+                        <span>
+                            🔍
                         </span>
-                    </td>
-                    <td>{{ row.explanation }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+                        <input
+                            type="text"
+                            id="searchInput"
+                            placeholder="Search submitted content or explanation..."
+                            autocomplete="off"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <label for="typeFilter">
+                        Content Type
+                    </label>
+
+                    <select id="typeFilter">
+
+                        <option value="">
+                            All Types
+                        </option>
+
+                        <option value="Email">
+                            Email
+                        </option>
+
+                        <option value="SMS">
+                            SMS
+                        </option>
+
+                        <option value="URL">
+                            URL
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div>
+
+                    <label for="predictionFilter">
+                        Prediction
+                    </label>
+
+                    <select id="predictionFilter">
+
+                        <option value="">
+                            All Predictions
+                        </option>
+
+                        <option value="Legitimate">
+                            Legitimate
+                        </option>
+
+                        <option value="Suspicious">
+                            Suspicious
+                        </option>
+
+                        <option value="Phishing">
+                            Phishing
+                        </option>
+
+                        <option value="Malicious">
+                            Malicious
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div>
+
+                    <label for="riskFilter">
+                        Risk Level
+                    </label>
+
+                    <select id="riskFilter">
+
+                        <option value="">
+                            All Risk Levels
+                        </option>
+
+                        <option value="High">
+                            High
+                        </option>
+
+                        <option value="Medium">
+                            Medium
+                        </option>
+
+                        <option value="Low">
+                            Low
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="history-reset-column">
+
+                    <label>
+                        &nbsp;
+                    </label>
+
+                    <button
+                        type="button"
+                        id="resetFiltersButton"
+                        class="history-reset-button"
+                    >
+                        Reset Filters
+                    </button>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             HISTORY TABLE
+        ================================================== -->
+
+        <section class="history-table-panel">
+
+
+            <div class="history-table-heading">
+
+                <div>
+
+                    <span>
+                        SCAN RECORDS
+                    </span>
+
+                    <h2>
+                        Detection Results
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            {% if detections %}
+
+
+                <div class="history-table-wrapper">
+
+                    <table
+                        class="history-table enhanced-history-table"
+                        id="historyTable"
+                    >
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th>
+                                    Type
+                                </th>
+
+                                <th>
+                                    Submitted Content
+                                </th>
+
+                                <th>
+                                    Prediction
+                                </th>
+
+                                <th>
+                                    Confidence
+                                </th>
+
+                                <th>
+                                    Risk
+                                </th>
+
+                                <th>
+                                    Explanation
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+
+                            {% for row in detections %}
+
+
+                                <tr
+                                    class="history-record"
+                                    data-type="{{ row.input_type }}"
+                                    data-prediction="{{ row.prediction }}"
+                                    data-risk="{{ row.risk_level }}"
+                                >
+
+
+                                    <td class="history-date-cell">
+
+                                        {{ row.scan_date }}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span
+                                            class="history-type-badge
+                                            {% if row.input_type == 'Email' %}
+                                                email
+                                            {% elif row.input_type == 'SMS' %}
+                                                sms
+                                            {% else %}
+                                                url
+                                            {% endif %}"
+                                        >
+
+                                            {% if row.input_type == "Email" %}
+
+                                                📧 Email
+
+                                            {% elif row.input_type == "SMS" %}
+
+                                                💬 SMS
+
+                                            {% else %}
+
+                                                🌐 URL
+
+                                            {% endif %}
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td
+                                        class="history-content-cell"
+                                        title="{{ row.submitted_content }}"
+                                    >
+
+                                        {{ row.submitted_content }}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span
+                                            class="history-prediction-badge
+                                            {% if row.prediction in ['Phishing', 'Malicious'] %}
+                                                threat
+                                            {% elif row.prediction == 'Suspicious' %}
+                                                suspicious
+                                            {% else %}
+                                                legitimate
+                                            {% endif %}"
+                                        >
+
+                                            {{ row.prediction }}
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <div class="history-confidence">
+
+                                            <strong>
+                                                {{ row.confidence_score }}%
+                                            </strong>
+
+                                            <div class="history-confidence-track">
+
+                                                <div
+                                                    class="history-confidence-fill"
+                                                    style="width: {{ row.confidence_score }}%;"
+                                                >
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span
+                                            class="risk-badge {{ row.risk_level|lower }}"
+                                        >
+                                            {{ row.risk_level }}
+                                        </span>
+
+                                    </td>
+
+
+                                    <td
+                                        class="history-explanation-cell"
+                                        title="{{ row.explanation }}"
+                                    >
+
+                                        {{ row.explanation }}
+
+                                    </td>
+
+
+                                </tr>
+
+
+                            {% endfor %}
+
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <!-- =========================================
+                     NO FILTER MATCH
+                ========================================== -->
+
+                <div
+                    class="history-no-results"
+                    id="historyNoResults"
+                    hidden
+                >
+
+                    <div>
+                        🔍
+                    </div>
+
+                    <h3>
+                        No matching detections
+                    </h3>
+
+                    <p>
+                        Try changing your search or filter options.
+                    </p>
+
+                </div>
+
+
+            {% else %}
+
+
+                <div class="history-empty-state">
+
+                    <div>
+                        📊
+                    </div>
+
+                    <h3>
+                        No detection history yet
+                    </h3>
+
+                    <p>
+                        Your Email, SMS and URL scan results will
+                        appear here after you start using PhishAI.
+                    </p>
+
+                    <a
+                        href="/sms-scanner"
+                        class="primary-btn"
+                    >
+                        Start Scanning
+                    </a>
+
+                </div>
+
+
+            {% endif %}
+
+
+        </section>
+
 
     </main>
+
 </div>
 
+
+<!-- =========================================================
+     HISTORY FILTERING
+========================================================= -->
+
 <script>
-const searchInput = document.getElementById("searchInput");
-const typeFilter = document.getElementById("typeFilter");
-const riskFilter = document.getElementById("riskFilter");
-const table = document.getElementById("historyTable");
-const rows = table.getElementsByTagName("tr");
 
-function filterTable() {
-    const searchValue = searchInput.value.toLowerCase();
-    const typeValue = typeFilter.value;
-    const riskValue = riskFilter.value;
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
-    for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].getElementsByTagName("td");
 
-        const type = cells[1].textContent.trim();
-        const risk = cells[4].textContent.trim();
-        const content = cells[5].textContent.toLowerCase();
+        const searchInput =
+            document.getElementById(
+                "searchInput"
+            );
 
-        const matchesSearch = content.includes(searchValue);
-        const matchesType = typeValue === "" || type === typeValue;
-        const matchesRisk = riskValue === "" || risk === riskValue;
 
-        rows[i].style.display = matchesSearch && matchesType && matchesRisk ? "" : "none";
+        const typeFilter =
+            document.getElementById(
+                "typeFilter"
+            );
+
+
+        const predictionFilter =
+            document.getElementById(
+                "predictionFilter"
+            );
+
+
+        const riskFilter =
+            document.getElementById(
+                "riskFilter"
+            );
+
+
+        const resetButton =
+            document.getElementById(
+                "resetFiltersButton"
+            );
+
+
+        const resultCounter =
+            document.getElementById(
+                "visibleResultCount"
+            );
+
+
+        const noResults =
+            document.getElementById(
+                "historyNoResults"
+            );
+
+
+        const rows =
+            Array.from(
+                document.querySelectorAll(
+                    ".history-record"
+                )
+            );
+
+
+        function filterHistory() {
+
+
+            const searchValue =
+                searchInput.value
+                    .trim()
+                    .toLowerCase();
+
+
+            const typeValue =
+                typeFilter.value;
+
+
+            const predictionValue =
+                predictionFilter.value;
+
+
+            const riskValue =
+                riskFilter.value;
+
+
+            let visibleRows = 0;
+
+
+            rows.forEach(
+                function (row) {
+
+
+                    const rowText =
+                        row.textContent
+                            .toLowerCase();
+
+
+                    const rowType =
+                        row.dataset.type;
+
+
+                    const rowPrediction =
+                        row.dataset.prediction;
+
+
+                    const rowRisk =
+                        row.dataset.risk;
+
+
+                    const matchesSearch =
+                        (
+                            searchValue === ""
+                            ||
+                            rowText.includes(
+                                searchValue
+                            )
+                        );
+
+
+                    const matchesType =
+                        (
+                            typeValue === ""
+                            ||
+                            rowType === typeValue
+                        );
+
+
+                    const matchesPrediction =
+                        (
+                            predictionValue === ""
+                            ||
+                            rowPrediction === predictionValue
+                        );
+
+
+                    const matchesRisk =
+                        (
+                            riskValue === ""
+                            ||
+                            rowRisk === riskValue
+                        );
+
+
+                    const visible =
+                        (
+                            matchesSearch
+                            &&
+                            matchesType
+                            &&
+                            matchesPrediction
+                            &&
+                            matchesRisk
+                        );
+
+
+                    row.hidden =
+                        !visible;
+
+
+                    if (visible) {
+
+                        visibleRows++;
+
+                    }
+
+
+                }
+            );
+
+
+            resultCounter.textContent =
+                visibleRows;
+
+
+            if (noResults) {
+
+                noResults.hidden =
+                    visibleRows !== 0;
+
+            }
+
+
+        }
+
+
+        function resetFilters() {
+
+
+            searchInput.value =
+                "";
+
+
+            typeFilter.value =
+                "";
+
+
+            predictionFilter.value =
+                "";
+
+
+            riskFilter.value =
+                "";
+
+
+            filterHistory();
+
+
+        }
+
+
+        searchInput.addEventListener(
+            "input",
+            filterHistory
+        );
+
+
+        typeFilter.addEventListener(
+            "change",
+            filterHistory
+        );
+
+
+        predictionFilter.addEventListener(
+            "change",
+            filterHistory
+        );
+
+
+        riskFilter.addEventListener(
+            "change",
+            filterHistory
+        );
+
+
+        resetButton.addEventListener(
+            "click",
+            resetFilters
+        );
+
+
+        filterHistory();
+
+
     }
-}
+);
 
-searchInput.addEventListener("keyup", filterTable);
-typeFilter.addEventListener("change", filterTable);
-riskFilter.addEventListener("change", filterTable);
 </script>
 
+
 </body>
+
 </html>

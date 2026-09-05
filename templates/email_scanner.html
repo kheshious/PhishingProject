@@ -1,9 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>Email Scanner | PhishAI</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
 </head>
 
 <body>
@@ -11,19 +22,49 @@
 <div class="layout">
 
     <aside class="sidebar">
+
         <h2>🛡️ PhishAI</h2>
 
         <nav>
-                      
-            <a href="/">🏠 Dashboard</a>
-            <a class="active" href="/email-scanner">📧 Email Scanner</a>
-            <a href="/sms-scanner">💬 SMS Scanner</a>
-            <a href="/url-scanner">🌐 URL Scanner</a>
-            <a href="/history">📊 Detection History</a>
-            <a href="/awareness">🧠 Awareness Centre</a>
-            <a href="/report-scam">🚩 Report Scam</a>
-            <a href="/scam-reports">📋 Reported Scams</a>
+
+            <a href="/">
+                🏠 Dashboard
+            </a>
+
+            <a
+                class="active"
+                href="/email-scanner"
+            >
+                📧 Email Scanner
+            </a>
+
+            <a href="/sms-scanner">
+                💬 SMS Scanner
+            </a>
+
+            <a href="/url-scanner">
+                🌐 URL Scanner
+            </a>
+
+            <a href="/history">
+                📊 Detection History
+            </a>
+
+            <a href="/awareness">
+                🧠 Awareness Centre
+            </a>
+
+            <a href="/report-scam">
+                🚩 Report Scam
+            </a>
+
+            <a href="/scam-reports">
+                📋 Reported Scams
+            </a>
+
         </nav>
+
+
         <div class="sidebar-user">
 
             <div class="user-avatar">
@@ -31,13 +72,22 @@
             </div>
 
             <div class="user-details">
-                <strong>{{ session.first_name }}</strong>
-                <small>{{ session.role }}</small>
+
+                <strong>
+                    {{ session.first_name }}
+                </strong>
+
+                <small>
+                    {{ session.role }}
+                </small>
+
             </div>
 
-            <a href="/logout"
-               class="logout-button"
-               title="Logout">
+            <a
+                href="/logout"
+                class="logout-button"
+                title="Logout"
+            >
                 ↪
             </a>
 
@@ -45,127 +95,477 @@
 
     </aside>
 
+
     <main class="main-content">
 
         <header class="topbar">
-            <h1>Email Scanner</h1>
-            <span>Analyse an email for phishing and fraud indicators</span>
+
+            <h1>
+                Email Scanner
+            </h1>
+
+            <span>
+                Analyse an email for phishing and fraud indicators
+            </span>
+
         </header>
+
 
         <section class="scanner-grid">
 
             <div class="scan-card">
-                <h2>Paste Email Content</h2>
+
+                <h2>
+                    Paste Email Content
+                </h2>
 
                 <p>
                     Paste the email subject and body below.
-                    PhishAI will analyse the content using the trained email model.
+                    PhishAI will analyse the content using the
+                    trained email model.
                 </p>
 
+
                 <form method="POST">
-                    <label>Email Content</label>
+
+                    <label for="submitted_content">
+                        Email Content
+                    </label>
 
                     <textarea
+                        id="submitted_content"
                         name="submitted_content"
                         rows="12"
+                        maxlength="5000"
                         placeholder="Paste the email subject and message here..."
-                        required>{{ result.submitted_content if result else "" }}</textarea>
+                        required
+                    >{{ result.submitted_content if result else "" }}</textarea>
+
 
                     <div class="form-footer">
-                        <small>Do not paste real passwords, PINs or private banking details.</small>
 
-                        <button type="submit" class="scan-btn">
+                        <small>
+                            Do not paste real passwords, PINs or
+                            private banking details.
+                        </small>
+
+                        <button
+                            type="submit"
+                            class="scan-btn"
+                        >
                             Analyse Email
                         </button>
+
                     </div>
+
                 </form>
+
             </div>
 
             <div class="scan-help">
 
                 <div class="ai-graphic small">
-                    <div class="shield">📧</div>
-                    <p>Email Threat Analysis</p>
+
+                    <div class="shield">
+                        📧
+                    </div>
+
+                    <p>
+                        Email Threat Analysis
+                    </p>
+
                 </div>
 
-                <h3>Common warning signs</h3>
+
+                <h3>
+                    Common warning signs
+                </h3>
 
                 <ul>
-                    <li>Urgent account verification requests</li>
-                    <li>Unexpected links or attachments</li>
-                    <li>Requests for passwords or banking details</li>
-                    <li>Prize or refund claims</li>
-                    <li>Unusual sender wording</li>
+
+                    <li>
+                        Urgent account verification requests
+                    </li>
+
+                    <li>
+                        Unexpected links or attachments
+                    </li>
+
+                    <li>
+                        Requests for passwords or banking details
+                    </li>
+
+                    <li>
+                        Prize or refund claims
+                    </li>
+
+                    <li>
+                        Unusual sender wording
+                    </li>
+
                 </ul>
 
             </div>
 
         </section>
 
+
         {% if result %}
 
-        <section class="result-panel">
+
+        <section
+            class="result-panel"
+            id="detection-result"
+        >
 
             <div class="result-header">
-                <h2>Detection Result</h2>
 
-                <span class="badge {{ result.risk_level|lower }}">
+                <h2>
+                    Detection Result
+                </h2>
+
+                <span
+                    class="badge {{ result.risk_level|lower }}"
+                >
                     {{ result.risk_level }} Risk
                 </span>
+
             </div>
+
 
             <div class="result-cards">
 
                 <div class="mini-card">
-                    <h3>Prediction</h3>
-                    <p>{{ result.prediction }}</p>
+
+                    <h3>
+                        Prediction
+                    </h3>
+
+                    <p>
+                        {{ result.prediction }}
+                    </p>
+
                 </div>
+
 
                 <div class="mini-card">
-                    <h3>Confidence</h3>
-                    <p>{{ result.confidence }}%</p>
+
+                    <h3>
+                        Confidence
+                    </h3>
+
+                    <p>
+                        {{ result.confidence }}%
+                    </p>
+
                 </div>
+
 
                 <div class="mini-card">
-                    <h3>Content Type</h3>
-                    <p>Email</p>
+
+                    <h3>
+                        Content Type
+                    </h3>
+
+                    <p>
+                        Email
+                    </p>
+
                 </div>
 
             </div>
 
-            <div class="analysis-box">
-                <h3>Why was it classified this way?</h3>
-                <ul>
-                    {% for reason in result.reasons %}
-                    <li>{{ reason }}</li>
-                    {% endfor %}
-                </ul>
+
+            <div class="risk-meter-container">
+
+                <div class="risk-meter-header">
+
+                    <h3>
+                        AI Risk Score
+                    </h3>
+
+                    <span>
+                        {{ result.confidence }}%
+                    </span>
+
+                </div>
+
+
+                <div class="risk-bar">
+
+                    <div
+                        class="risk-fill
+                        {% if result.risk_level == 'High' %}
+                            high
+                        {% elif result.risk_level == 'Medium' %}
+                            medium
+                        {% else %}
+                            low
+                        {% endif %}"
+                        style="width: {{ result.confidence }}%;"
+                    >
+                    </div>
+
+                </div>
+
             </div>
 
-            <div class="analysis-box">
-                <h3>Recommended Action</h3>
-                <ul>
-                    {% for action in result.actions %}
-                    <li>{{ action }}</li>
-                    {% endfor %}
-                </ul>
+
+            <!-- ==========================================
+                 EXPLANATION
+            =========================================== -->
+
+            <div class="insight-grid">
+
+                <div class="analysis-box">
+
+                    <h3>
+                        🧠 Why was it classified this way?
+                    </h3>
+
+                    {% if result.reasons %}
+
+                        <ul>
+
+                            {% for reason in result.reasons %}
+
+                                <li>
+                                    {{ reason }}
+                                </li>
+
+                            {% endfor %}
+
+                        </ul>
+
+                    {% else %}
+
+                        <p>
+                            No additional explanation is available.
+                        </p>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="analysis-box">
+
+                    <h3>
+                        ⚠️ Recommended Action
+                    </h3>
+
+                    {% if result.actions %}
+
+                        <ul>
+
+                            {% for action in result.actions %}
+
+                                <li>
+                                    {{ action }}
+                                </li>
+
+                            {% endfor %}
+
+                        </ul>
+
+                    {% else %}
+
+                        <p>
+                            Continue to follow normal email
+                            security precautions.
+                        </p>
+
+                    {% endif %}
+
+                </div>
+
             </div>
+
+
+            <!-- ==========================================
+                 PERSONALISED LEARNING
+            =========================================== -->
+
+            {% if result.recommended_modules %}
+
+                <section class="smart-learning-section">
+
+                    <div class="smart-learning-heading">
+
+                        <span class="scanner-learning-label">
+                            PERSONALISED LEARNING
+                        </span>
+
+                        <h2>
+                            Recommended for this threat
+                        </h2>
+
+                        <p>
+                            Based on the type and content of this email,
+                            these learning modules can help you understand
+                            the risks involved.
+                        </p>
+
+                    </div>
+
+
+                    <div class="smart-learning-grid">
+
+                        {% for module in result.recommended_modules %}
+
+                            <article
+                                class="smart-learning-card
+                                {% if loop.first %}
+                                    primary-learning-card
+                                {% endif %}"
+                            >
+
+                                <div class="smart-learning-card-top">
+
+                                    <div class="smart-learning-module-icon">
+
+                                        {{ module.icon }}
+
+                                    </div>
+
+
+                                    {% if loop.first %}
+
+                                        <span class="primary-recommendation-badge">
+                                            PRIMARY
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="secondary-recommendation-badge">
+                                            RELATED
+                                        </span>
+
+                                    {% endif %}
+
+                                </div>
+
+
+                                <span class="smart-learning-category">
+
+                                    {{ module.category }}
+
+                                </span>
+
+
+                                <h3>
+
+                                    {{ module.title }}
+
+                                </h3>
+
+
+                                <p>
+
+                                    {{ module.description }}
+
+                                </p>
+
+
+                                <a
+                                    href="{{ url_for(
+                                        'learning_module',
+                                        module_id=module.module_id
+                                    ) }}"
+                                    class="smart-learning-button"
+                                >
+                                    Start Learning →
+                                </a>
+
+                            </article>
+
+                        {% endfor %}
+
+                    </div>
+
+                </section>
+
+
+            {% elif result.recommended_module %}
+
+                <section class="scanner-learning-recommendation">
+
+                    <div class="scanner-learning-icon">
+
+                        {{ result.recommended_module.icon }}
+
+                    </div>
+
+
+                    <div class="scanner-learning-content">
+
+                        <span class="scanner-learning-label">
+                            RECOMMENDED LEARNING
+                        </span>
+
+                        <h3>
+                            Learn more about
+                            {{ result.recommended_module.title }}
+                        </h3>
+
+                        <p>
+                            {{ result.recommended_module.description }}
+                        </p>
+
+                    </div>
+
+
+                    <a
+                        href="{{ url_for(
+                            'learning_module',
+                            module_id=result.recommended_module.module_id
+                        ) }}"
+                        class="scanner-learning-button"
+                    >
+                        Start Learning →
+                    </a>
+
+                </section>
+
+            {% endif %}
+
 
             {% if result.prediction in ["Phishing", "Suspicious"] %}
-            <form method="POST" action="/report-scam" class="report-result-form">
 
-                <input type="hidden" name="report_type" value="Email">
+                <form
+                    method="POST"
+                    action="/report-scam"
+                    class="report-result-form"
+                >
 
-                <input
-                    type="hidden"
-                    name="reported_content"
-                    value="{{ result.submitted_content }}">
+                    <input
+                        type="hidden"
+                        name="submit_report"
+                        value="true"
+                    >
 
-                <button type="submit" class="report-btn">
-                    🚩 Report This Scam
-                </button>
+                    <input
+                        type="hidden"
+                        name="report_type"
+                        value="Email"
+                    >
 
-            </form>
+                    <input
+                        type="hidden"
+                        name="reported_content"
+                        value="{{ result.submitted_content }}"
+                    >
+
+
+                    <button
+                        type="submit"
+                        class="report-btn"
+                    >
+                        🚩 Report This Scam
+                    </button>
+
+                </form>
+
             {% endif %}
 
         </section>
@@ -173,7 +573,38 @@
         {% endif %}
 
     </main>
+
 </div>
 
+{% if result %}
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const resultSection =
+            document.getElementById(
+                "detection-result"
+            );
+
+        if (resultSection) {
+
+            resultSection.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+
+        }
+
+    }
+);
+
+</script>
+
+{% endif %}
+
 </body>
+
 </html>

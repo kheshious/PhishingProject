@@ -18,7 +18,6 @@ from sklearn.metrics import (
     confusion_matrix,
 )
 from sklearn.linear_model import LogisticRegression
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
 
 from xgboost import XGBClassifier
