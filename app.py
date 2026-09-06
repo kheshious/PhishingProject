@@ -11,6 +11,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import os
 import sys
+from machine_learning.ocr_service import perform_ocr_from_bytes
 
 
 sys.path.append(
@@ -1390,6 +1391,112 @@ def url_scanner():
     return render_template(
         "url_scanner.html",
         result=result
+    )
+
+@app.route(
+    "/ocr-scanner",
+    methods=["GET", "POST"]
+)
+@user_required
+def ocr_scanner():
+
+    ocr_result = None
+    error_message = None
+
+    if request.method == "POST":
+
+        uploaded_image = request.files.get(
+            "image"
+        )
+
+        if (
+            uploaded_image is None
+            or uploaded_image.filename == ""
+        ):
+
+            error_message = (
+                "Please select an image "
+                "containing a URL."
+            )
+
+        elif uploaded_image.mimetype not in {
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/bmp",
+        }:
+
+            error_message = (
+                "Please upload a PNG, JPEG, "
+                "WEBP or BMP image."
+            )
+
+        else:
+
+            try:
+
+                image_bytes = uploaded_image.read()
+
+                if len(image_bytes) > 10 * 1024 * 1024:
+
+                    error_message = (
+                        "The image must be smaller "
+                        "than 10 MB."
+                    )
+
+                else:
+
+                    extracted_result = (
+                        perform_ocr_from_bytes(
+                            image_bytes,
+                            content_type="url",
+                        )
+                    )
+
+                    detected_urls = (
+                        extracted_result.get(
+                            "urls",
+                            []
+                        )
+                    )
+
+                    detected_url = (
+                        detected_urls[0]
+                        if detected_urls
+                        else ""
+                    )
+
+                    ocr_result = {
+                        "filename":
+                            uploaded_image.filename,
+
+                        "extracted_text":
+                            extracted_result.get(
+                                "text",
+                                ""
+                            ),
+
+                        "ocr_confidence":
+                            extracted_result.get(
+                                "ocr_confidence",
+                                0
+                            ),
+
+                        "detected_url":
+                            detected_url,
+                    }
+
+            except Exception as error:
+
+                error_message = (
+                    "OCR processing failed: "
+                    f"{error}"
+                )
+
+    return render_template(
+        "ocr_scanner.html",
+        ocr_result=ocr_result,
+        error_message=error_message,
     )
 
 
