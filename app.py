@@ -274,7 +274,38 @@ def home():
 
     cursor.execute(
         """
-        SELECT COUNT(*) AS total
+        SELECT
+            COUNT(*) AS total_scans,
+
+            SUM(
+                CASE
+                    WHEN risk_level = 'High'
+                    THEN 1
+                    ELSE 0
+                END
+            ) AS high_risk_count,
+
+            SUM(
+                CASE
+                    WHEN risk_level = 'Medium'
+                    THEN 1
+                    ELSE 0
+                END
+            ) AS medium_risk_count,
+
+            SUM(
+                CASE
+                    WHEN risk_level = 'Low'
+                    THEN 1
+                    ELSE 0
+                END
+            ) AS low_risk_count,
+
+            ROUND(
+                AVG(confidence_score),
+                2
+            ) AS avg_confidence
+
         FROM detections
         WHERE user_id = %s
         """,
@@ -283,119 +314,49 @@ def home():
         )
     )
 
-    total_scans = (
-        cursor.fetchone()["total"]
-        or 0
+    detection_summary = (
+        cursor.fetchone()
+        or {}
     )
 
-    cursor.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM detections
-        WHERE user_id = %s
-          AND prediction IN (
-              'Phishing',
-              'Malicious'
-          )
-        """,
-        (
-            user_id,
+    total_scans = int(
+        detection_summary.get(
+            "total_scans"
         )
-    )
-
-    phishing_count = (
-        cursor.fetchone()["total"]
         or 0
     )
 
-
-    cursor.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM detections
-        WHERE user_id = %s
-          AND prediction = 'Suspicious'
-        """,
-        (
-            user_id,
+    high_risk_count = int(
+        detection_summary.get(
+            "high_risk_count"
         )
-    )
-
-    suspicious_count = (
-        cursor.fetchone()["total"]
         or 0
     )
 
-
-    cursor.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM detections
-        WHERE user_id = %s
-          AND prediction = 'Legitimate'
-        """,
-        (
-            user_id,
+    medium_risk_count = int(
+        detection_summary.get(
+            "medium_risk_count"
         )
-    )
-
-    legitimate_count = (
-        cursor.fetchone()["total"]
         or 0
     )
 
-    cursor.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM detections
-        WHERE user_id = %s
-          AND risk_level = 'High'
-        """,
-        (
-            user_id,
+    low_risk_count = int(
+        detection_summary.get(
+            "low_risk_count"
         )
-    )
-
-    high_risk_count = (
-        cursor.fetchone()["total"]
         or 0
     )
 
-
-    cursor.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM detections
-        WHERE user_id = %s
-          AND risk_level = 'Medium'
-        """,
-        (
-            user_id,
+    avg_confidence = float(
+        detection_summary.get(
+            "avg_confidence"
         )
-    )
-
-    medium_risk_count = (
-        cursor.fetchone()["total"]
         or 0
     )
 
-
-    cursor.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM detections
-        WHERE user_id = %s
-          AND risk_level = 'Low'
-        """,
-        (
-            user_id,
-        )
-    )
-
-    low_risk_count = (
-        cursor.fetchone()["total"]
-        or 0
-    )
+    phishing_count = high_risk_count
+    suspicious_count = medium_risk_count
+    legitimate_count = low_risk_count
 
     cursor.execute(
         """
@@ -408,30 +369,8 @@ def home():
         )
     )
 
-    scam_reports_count = (
+    scam_reports_count = int(
         cursor.fetchone()["total"]
-        or 0
-    )
-
-    cursor.execute(
-        """
-        SELECT
-            ROUND(
-                AVG(confidence_score),
-                2
-            ) AS avg_confidence
-        FROM detections
-        WHERE user_id = %s
-        """,
-        (
-            user_id,
-        )
-    )
-
-    avg_confidence = (
-        cursor.fetchone()[
-            "avg_confidence"
-        ]
         or 0
     )
 
@@ -453,9 +392,7 @@ def home():
         )
     )
 
-    recent_scans = (
-        cursor.fetchall()
-    )
+    recent_scans = cursor.fetchall()
 
     cursor.execute(
         """
@@ -464,13 +401,12 @@ def home():
         """
     )
 
-    total_modules = (
+    total_modules = int(
         cursor.fetchone()[
             "total_modules"
         ]
         or 0
     )
-
 
     cursor.execute(
         """
@@ -484,7 +420,7 @@ def home():
         )
     )
 
-    modules_completed = (
+    modules_completed = int(
         cursor.fetchone()[
             "completed_modules"
         ]
@@ -498,7 +434,7 @@ def home():
         """
     )
 
-    total_lessons = (
+    total_lessons = int(
         cursor.fetchone()[
             "total_lessons"
         ]
@@ -521,13 +457,12 @@ def home():
         )
     )
 
-    lessons_completed = (
+    lessons_completed = int(
         cursor.fetchone()[
             "completed_lessons"
         ]
         or 0
     )
-
 
     if total_lessons > 0:
 
@@ -541,7 +476,6 @@ def home():
     else:
 
         learning_progress = 0
-
 
     cursor.execute(
         """
@@ -559,13 +493,12 @@ def home():
         )
     )
 
-    average_quiz_score = (
+    average_quiz_score = float(
         cursor.fetchone()[
             "average_quiz_score"
         ]
         or 0
     )
-
 
     cursor.execute(
         """
@@ -630,39 +563,38 @@ def home():
         )
     )
 
-    learning_modules = (
-        cursor.fetchall()
-    )
+    learning_modules = cursor.fetchall()
 
     for module in learning_modules:
 
-        module_total = (
+        module_total = int(
             module["total_lessons"]
             or 0
         )
 
-        module_completed_lessons = (
+        completed_module_lessons = int(
             module["completed_lessons"]
             or 0
         )
 
-
         if module_total > 0:
 
-            module["progress_percentage"] = round(
+            module[
+                "progress_percentage"
+            ] = round(
                 (
-                    module_completed_lessons
+                    completed_module_lessons
                     / module_total
                 ) * 100
             )
 
         else:
 
-            module["progress_percentage"] = 0
-
+            module[
+                "progress_percentage"
+            ] = 0
 
     continue_module = None
-
 
     for module in learning_modules:
 
@@ -672,7 +604,6 @@ def home():
         ):
 
             continue_module = module
-
             break
 
     if continue_module is None:
@@ -685,30 +616,20 @@ def home():
             ):
 
                 continue_module = module
-
                 break
-
 
     if (
         continue_module is None
         and learning_modules
     ):
 
-        continue_module = (
-            learning_modules[0]
-        )
-
+        continue_module = learning_modules[0]
 
     cursor.close()
-
     conn.close()
 
     return render_template(
         "index.html",
-
-        # -------------------------------------------------
-        # DETECTION COUNTS
-        # -------------------------------------------------
 
         total_scans=total_scans,
 
@@ -718,14 +639,11 @@ def home():
 
         legitimate_count=legitimate_count,
 
-
-
         high_risk_count=high_risk_count,
 
         medium_risk_count=medium_risk_count,
 
         low_risk_count=low_risk_count,
-
 
         scam_reports_count=scam_reports_count,
 
@@ -1008,19 +926,38 @@ def sms_scanner():
 
     if request.method == "POST":
 
-        submitted_content = request.form["submitted_content"]
+        submitted_content = request.form.get(
+            "submitted_content",
+            ""
+        ).strip()
+
+        if not submitted_content:
+
+            flash(
+                "Please enter an SMS message.",
+                "warning"
+            )
+
+            return render_template(
+                "sms_scanner.html",
+                result=None
+            )
 
         prediction_result = predict_message(
             submitted_content
         )
 
-        recommended_modules = get_recommended_learning_modules(
-            input_type="SMS",
-            prediction=prediction_result["prediction"],
-            submitted_content=submitted_content,
-            reasons=prediction_result.get(
-                "reasons",
-                []
+        recommended_modules = (
+            get_recommended_learning_modules(
+                input_type="SMS",
+                prediction=prediction_result[
+                    "prediction"
+                ],
+                submitted_content=submitted_content,
+                reasons=prediction_result.get(
+                    "reasons",
+                    []
+                )
             )
         )
 
@@ -1031,15 +968,19 @@ def sms_scanner():
         )
 
         result = {
-
-            "input_type":
-                "SMS",
+            "input_type": "SMS",
 
             "submitted_content":
                 submitted_content,
 
             "prediction":
                 prediction_result["prediction"],
+
+            "display_prediction":
+                prediction_result.get(
+                    "display_prediction",
+                    prediction_result["prediction"]
+                ),
 
             "confidence":
                 round(
@@ -1049,13 +990,37 @@ def sms_scanner():
                     2
                 ),
 
+            "risk_score":
+                round(
+                    float(
+                        prediction_result[
+                            "smishing_probability"
+                        ]
+                    ),
+                    2
+                ),
+
             "risk_level":
                 prediction_result["risk_level"],
 
-            "reasons":
-                prediction_result.get(
-                    "reasons",
-                    []
+            "legitimate_probability":
+                round(
+                    float(
+                        prediction_result[
+                            "legitimate_probability"
+                        ]
+                    ),
+                    2
+                ),
+
+            "smishing_probability":
+                round(
+                    float(
+                        prediction_result[
+                            "smishing_probability"
+                        ]
+                    ),
+                    2
                 ),
 
             "actions":
@@ -1091,21 +1056,38 @@ def email_scanner():
 
     if request.method == "POST":
 
-        submitted_content = request.form["submitted_content"]
+        submitted_content = request.form.get(
+            "submitted_content",
+            ""
+        ).strip()
 
-        # Run Email machine-learning prediction
+        if not submitted_content:
+
+            flash(
+                "Please enter the email content.",
+                "warning"
+            )
+
+            return render_template(
+                "email_scanner.html",
+                result=None
+            )
+
         prediction_result = predict_email(
             submitted_content
         )
 
-        # Get personalised learning recommendations
-        recommended_modules = get_recommended_learning_modules(
-            input_type="Email",
-            prediction=prediction_result["prediction"],
-            submitted_content=submitted_content,
-            reasons=prediction_result.get(
-                "reasons",
-                []
+        recommended_modules = (
+            get_recommended_learning_modules(
+                input_type="Email",
+                prediction=prediction_result[
+                    "prediction"
+                ],
+                submitted_content=submitted_content,
+                reasons=prediction_result.get(
+                    "reasons",
+                    []
+                )
             )
         )
 
@@ -1115,11 +1097,8 @@ def email_scanner():
             else None
         )
 
-        # Build result for the HTML page
         result = {
-
-            "input_type":
-                "Email",
+            "input_type": "Email",
 
             "submitted_content":
                 submitted_content,
@@ -1135,8 +1114,38 @@ def email_scanner():
                     2
                 ),
 
+            "risk_score":
+                round(
+                    float(
+                        prediction_result[
+                            "phishing_probability"
+                        ]
+                    ),
+                    2
+                ),
+
             "risk_level":
                 prediction_result["risk_level"],
+
+            "legitimate_probability":
+                round(
+                    float(
+                        prediction_result[
+                            "legitimate_probability"
+                        ]
+                    ),
+                    2
+                ),
+
+            "phishing_probability":
+                round(
+                    float(
+                        prediction_result[
+                            "phishing_probability"
+                        ]
+                    ),
+                    2
+                ),
 
             "reasons":
                 prediction_result.get(
@@ -1168,13 +1177,6 @@ def email_scanner():
         result=result
     )
 
-
-    return render_template(
-        "email_scanner.html",
-        result=result
-    )
-
-
 @app.route("/url-scanner", methods=["GET", "POST"])
 @user_required
 def url_scanner():
@@ -1183,40 +1185,34 @@ def url_scanner():
 
     if request.method == "POST":
 
-        submitted_content = request.form["submitted_content"]
+        submitted_content = request.form.get(
+            "submitted_content",
+            ""
+        ).strip()
 
-        # Run URL machine-learning prediction
+        if not submitted_content:
+
+            flash(
+                "Please enter a website URL.",
+                "warning"
+            )
+
+            return render_template(
+                "url_scanner.html",
+                result=None
+            )
+
         prediction_result = predict_url(
             submitted_content
         )
 
-        # Get personalised learning recommendations
-        recommended_modules = get_recommended_learning_modules(
-            input_type="URL",
-            prediction=prediction_result["prediction"],
-            submitted_content=submitted_content,
-            reasons=prediction_result.get(
-                "reasons",
-                []
-            )
-        )
-
-        recommended_module = (
-            recommended_modules[0]
-            if recommended_modules
-            else None
-        )
-
-        # -------------------------------------------------
-        # INVALID URL
-        # -------------------------------------------------
-
-        if prediction_result["prediction"] == "Invalid URL":
+        if (
+            prediction_result["prediction"]
+            == "Invalid URL"
+        ):
 
             result = {
-
-                "input_type":
-                    "URL",
+                "input_type": "URL",
 
                 "submitted_content":
                     submitted_content,
@@ -1227,7 +1223,10 @@ def url_scanner():
                 "validation_error":
                     prediction_result.get(
                         "validation_error",
-                        "Please enter a valid website URL."
+                        (
+                            "Please enter a valid "
+                            "website URL."
+                        )
                     ),
 
                 "reasons":
@@ -1243,119 +1242,109 @@ def url_scanner():
                     []
             }
 
-        # -------------------------------------------------
-        # VALID URL
-        # -------------------------------------------------
-
         else:
 
-            prediction = (
-                prediction_result["prediction"]
-            )
-
-            confidence = round(
-                float(
-                    prediction_result["confidence"]
-                ),
-                2
-            )
-
-            legitimate_probability = round(
-                float(
-                    prediction_result.get(
-                        "legitimate_probability",
-                        0
+            recommended_modules = (
+                get_recommended_learning_modules(
+                    input_type="URL",
+                    prediction=prediction_result[
+                        "prediction"
+                    ],
+                    submitted_content=submitted_content,
+                    reasons=prediction_result.get(
+                        "reasons",
+                        []
                     )
-                ),
-                2
+                )
             )
 
-            malicious_probability = round(
-                float(
-                    prediction_result.get(
-                        "malicious_probability",
-                        0
-                    )
-                ),
-                2
+            recommended_module = (
+                recommended_modules[0]
+                if recommended_modules
+                else None
             )
-
-            model_display_prediction = (
-                prediction
-            )
-
-            model_confidence = (
-                confidence
-            )
-
-            decision_source = (
-                "Machine-Learning Model"
-            )
-
-            actions = prediction_result.get(
-                "recommended_actions",
-                []
-            )
-
-            if not actions:
-
-                if prediction == "Malicious":
-
-                    actions = [
-                        "Do not enter passwords, banking details or personal information.",
-                        "Avoid downloading files from the website.",
-                        "Do not continue using the link unless you can verify it.",
-                        "Report the URL if you believe it is fraudulent or harmful."
-                    ]
-
-                else:
-
-                    actions = [
-                        "Continue to exercise normal online security precautions.",
-                        "Check the website address before entering sensitive information.",
-                        "Avoid downloading unexpected files."
-                    ]
 
             result = {
-
-                "input_type":
-                    "URL",
+                "input_type": "URL",
 
                 "submitted_content":
                     submitted_content,
 
                 "prediction":
-                    prediction,
+                    prediction_result[
+                        "prediction"
+                    ],
 
                 "confidence":
-                    confidence,
-
-                "risk_level":
-                    prediction_result["risk_level"],
-
-                "model_display_prediction":
-                    model_display_prediction,
-
-                "model_confidence":
-                    model_confidence,
-
-                "decision_source":
-                    decision_source,
-
-                "legitimate_probability":
-                    legitimate_probability,
-
-                "malicious_probability":
-                    malicious_probability,
-
-                "reasons":
-                    prediction_result.get(
-                        "reasons",
-                        []
+                    round(
+                        float(
+                            prediction_result[
+                                "confidence"
+                            ]
+                        ),
+                        2
                     ),
 
+                "model_confidence":
+                    round(
+                        float(
+                            prediction_result[
+                                "model_confidence"
+                            ]
+                        ),
+                        2
+                    ),
+
+                "risk_score":
+                    round(
+                        float(
+                            prediction_result[
+                                "malicious_probability"
+                            ]
+                        ),
+                        2
+                    ),
+
+                "risk_level":
+                    prediction_result[
+                        "risk_level"
+                    ],
+
+                "legitimate_probability":
+                    round(
+                        float(
+                            prediction_result[
+                                "legitimate_probability"
+                            ]
+                        ),
+                        2
+                    ),
+
+                "malicious_probability":
+                    round(
+                        float(
+                            prediction_result[
+                                "malicious_probability"
+                            ]
+                        ),
+                        2
+                    ),
+
+                "model_display_prediction":
+                    prediction_result[
+                        "model_display_prediction"
+                    ],
+
+                "decision_source":
+                    prediction_result[
+                        "decision_source"
+                    ],
+
                 "actions":
-                    actions,
+                    prediction_result.get(
+                        "recommended_actions",
+                        []
+                    ),
 
                 "warnings":
                     prediction_result.get(
@@ -1381,7 +1370,6 @@ def url_scanner():
                     recommended_modules
             }
 
-
             save_detection(
                 input_type="URL",
                 submitted_content=submitted_content,
@@ -1393,6 +1381,8 @@ def url_scanner():
         result=result
     )
 
+
+
 @app.route(
     "/ocr-scanner",
     methods=["GET", "POST"]
@@ -1402,6 +1392,27 @@ def ocr_scanner():
 
     ocr_result = None
     error_message = None
+
+    selected_content_type = (
+        request.form.get(
+            "content_type",
+            "url"
+        )
+        .strip()
+        .lower()
+    )
+
+    allowed_content_types = {
+        "url",
+        "sms",
+        "email",
+    }
+
+    if (
+        selected_content_type
+        not in allowed_content_types
+    ):
+        selected_content_type = "url"
 
     if request.method == "POST":
 
@@ -1415,8 +1426,8 @@ def ocr_scanner():
         ):
 
             error_message = (
-                "Please select an image "
-                "containing a URL."
+                "Please select or capture "
+                "an image."
             )
 
         elif uploaded_image.mimetype not in {
@@ -1449,7 +1460,16 @@ def ocr_scanner():
                     extracted_result = (
                         perform_ocr_from_bytes(
                             image_bytes,
-                            content_type="url",
+                            content_type=(
+                                selected_content_type
+                            ),
+                        )
+                    )
+
+                    extracted_text = (
+                        extracted_result.get(
+                            "text",
+                            ""
                         )
                     )
 
@@ -1460,21 +1480,63 @@ def ocr_scanner():
                         )
                     )
 
-                    detected_url = (
-                        detected_urls[0]
-                        if detected_urls
-                        else ""
-                    )
+                    if selected_content_type == "url":
+
+                        detected_content = (
+                            detected_urls[0]
+                            if detected_urls
+                            else extracted_text
+                        )
+
+                        analysis_route = (
+                            "url_scanner"
+                        )
+
+                        content_label = (
+                            "Website URL"
+                        )
+
+                    elif selected_content_type == "sms":
+
+                        detected_content = (
+                            extracted_text
+                        )
+
+                        analysis_route = (
+                            "sms_scanner"
+                        )
+
+                        content_label = (
+                            "SMS message"
+                        )
+
+                    else:
+
+                        detected_content = (
+                            extracted_text
+                        )
+
+                        analysis_route = (
+                            "email_scanner"
+                        )
+
+                        content_label = (
+                            "Email content"
+                        )
 
                     ocr_result = {
+
                         "filename":
                             uploaded_image.filename,
 
+                        "content_type":
+                            selected_content_type,
+
+                        "content_label":
+                            content_label,
+
                         "extracted_text":
-                            extracted_result.get(
-                                "text",
-                                ""
-                            ),
+                            extracted_text,
 
                         "ocr_confidence":
                             extracted_result.get(
@@ -1482,8 +1544,11 @@ def ocr_scanner():
                                 0
                             ),
 
-                        "detected_url":
-                            detected_url,
+                        "detected_content":
+                            detected_content,
+
+                        "analysis_route":
+                            analysis_route,
                     }
 
             except Exception as error:
@@ -1497,8 +1562,8 @@ def ocr_scanner():
         "ocr_scanner.html",
         ocr_result=ocr_result,
         error_message=error_message,
+        selected_content_type=selected_content_type,
     )
-
 
 @app.route("/history")
 @user_required
@@ -2915,24 +2980,36 @@ def submit_module_quiz(module_id):
         )
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("""
+    cursor = conn.cursor(
+        dictionary=True
+    )
+
+    cursor.execute(
+        """
         SELECT *
         FROM learning_modules
         WHERE module_id = %s
-    """, (
-        module_id,
-    ))
+        """,
+        (
+            module_id,
+        )
+    )
 
     module = cursor.fetchone()
 
     if not module:
+
         cursor.close()
         conn.close()
-        return "Learning module not found.", 404
 
-    cursor.execute("""
+        return (
+            "Learning module not found.",
+            404
+        )
+
+    cursor.execute(
+        """
         SELECT
             question_id,
             question_text,
@@ -2945,13 +3022,16 @@ def submit_module_quiz(module_id):
         FROM quiz_questions
         WHERE module_id = %s
         ORDER BY display_order
-    """, (
-        module_id,
-    ))
+        """,
+        (
+            module_id,
+        )
+    )
 
     questions = cursor.fetchall()
 
     if not questions:
+
         cursor.close()
         conn.close()
 
@@ -2997,27 +3077,37 @@ def submit_module_quiz(module_id):
         results.append({
             "question_text":
                 question["question_text"],
+
             "selected_option":
-                selected_option,
+                selected_option or "-",
+
             "selected_answer":
                 option_lookup.get(
                     selected_option,
                     "No answer"
                 ),
+
             "correct_option":
                 correct_option,
+
             "correct_answer":
                 option_lookup[
                     correct_option
                 ],
+
             "is_correct":
                 is_correct,
+
             "explanation":
                 question["explanation"],
         })
 
     total_questions = len(
         questions
+    )
+
+    incorrect_count = (
+        total_questions - score
     )
 
     percentage = round(
@@ -3032,10 +3122,77 @@ def submit_module_quiz(module_id):
         percentage >= 70
     )
 
+    if percentage >= 70:
+
+        performance_level = "Passed"
+
+        feedback_title = (
+            "Well done!"
+        )
+
+        feedback_message = (
+            "You demonstrated a good understanding of "
+            f"{module['title']}. You can continue to the "
+            "next learning module."
+        )
+
+        recommended_action = (
+            "Review any incorrect answers and continue "
+            "to the next module."
+        )
+
+        feedback_class = "passed"
+
+    elif percentage >= 50:
+
+        performance_level = "Developing"
+
+        feedback_title = (
+            "You are making progress"
+        )
+
+        feedback_message = (
+            "You understand some of the important concepts, "
+            "but there are still areas that require revision."
+        )
+
+        recommended_action = (
+            f"Review the {incorrect_count} incorrect "
+            "answer or answers, revisit the relevant lessons "
+            "and attempt the quiz again."
+        )
+
+        feedback_class = "developing"
+
+    else:
+
+        performance_level = (
+            "Needs Improvement"
+        )
+
+        feedback_title = (
+            "Further learning is recommended"
+        )
+
+        feedback_message = (
+            f"Your score shows that you should review the "
+            f"{module['title']} learning module before "
+            "attempting the quiz again."
+        )
+
+        recommended_action = (
+            "Repeat the module lessons, review the answer "
+            "explanations and then retake the quiz."
+        )
+
+        feedback_class = "needs-improvement"
+
     cursor.close()
+
     cursor = conn.cursor()
 
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO quiz_attempts
         (
             user_id,
@@ -3052,15 +3209,18 @@ def submit_module_quiz(module_id):
             %s,
             %s
         )
-    """, (
-        user_id,
-        module_id,
-        score,
-        total_questions,
-        percentage,
-    ))
+        """,
+        (
+            user_id,
+            module_id,
+            score,
+            total_questions,
+            percentage,
+        )
+    )
 
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO user_learning_progress
         (
             user_id,
@@ -3079,28 +3239,33 @@ def submit_module_quiz(module_id):
         )
         ON DUPLICATE KEY UPDATE
             lessons_completed = %s,
+
             module_completed =
                 GREATEST(
                     module_completed,
                     %s
                 ),
+
             best_quiz_score =
                 GREATEST(
                     best_quiz_score,
                     %s
                 )
-    """, (
-        user_id,
-        module_id,
-        progress["completed_lessons"],
-        int(passed),
-        percentage,
-        progress["completed_lessons"],
-        int(passed),
-        percentage,
-    ))
+        """,
+        (
+            user_id,
+            module_id,
+            progress["completed_lessons"],
+            int(passed),
+            percentage,
+            progress["completed_lessons"],
+            int(passed),
+            percentage,
+        )
+    )
 
     conn.commit()
+
     cursor.close()
     conn.close()
 
@@ -3108,9 +3273,15 @@ def submit_module_quiz(module_id):
         "quiz_result.html",
         module=module,
         score=score,
+        incorrect_count=incorrect_count,
         total_questions=total_questions,
         percentage=percentage,
         passed=passed,
+        performance_level=performance_level,
+        feedback_title=feedback_title,
+        feedback_message=feedback_message,
+        recommended_action=recommended_action,
+        feedback_class=feedback_class,
         results=results,
     )
 

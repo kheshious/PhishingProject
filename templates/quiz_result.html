@@ -1,16 +1,61 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>{{ module.title }} Quiz Result | PhishAI</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {{ module.title }} Quiz Result | PhishAI
+    </title>
 
     <link
         rel="stylesheet"
         href="{{ url_for('static', filename='style.css') }}"
     >
+
+    <style>
+        .quiz-recommendation-box {
+            margin-top: 20px;
+            padding: 16px 18px;
+            border-left: 4px solid #2563eb;
+            border-radius: 10px;
+            background: #eff6ff;
+            color: #1e3a8a;
+        }
+
+        .quiz-recommendation-box strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .quiz-recommendation-box p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .quiz-recommendation-box.passed {
+            border-left-color: #16a34a;
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .quiz-recommendation-box.developing {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+            color: #92400e;
+        }
+
+        .quiz-recommendation-box.needs-improvement {
+            border-left-color: #dc2626;
+            background: #fef2f2;
+            color: #991b1b;
+        }
+    </style>
 </head>
 
 <body>
@@ -19,14 +64,35 @@
 
     <aside class="sidebar">
 
-        <h2>🛡️ PhishAI</h2>
+        <h2>
+            🛡️ PhishAI
+        </h2>
 
         <nav>
-            <a href="/">🏠 Dashboard</a>
-            <a href="/email-scanner">📧 Email Scanner</a>
-            <a href="/sms-scanner">💬 SMS Scanner</a>
-            <a href="/url-scanner">🌐 URL Scanner</a>
-            <a href="/history">📊 Detection History</a>
+
+            <a href="/">
+                🏠 Dashboard
+            </a>
+
+            <a href="/email-scanner">
+                📧 Email Scanner
+            </a>
+
+            <a href="/sms-scanner">
+                💬 SMS Scanner
+            </a>
+
+            <a href="/url-scanner">
+                🌐 URL Scanner
+            </a>
+
+            <a href="/ocr-scanner">
+                📷 OCR Scanner
+            </a>
+
+            <a href="/history">
+                📊 Detection History
+            </a>
 
             <a
                 href="/awareness"
@@ -42,6 +108,7 @@
             <a href="/scam-reports">
                 📋 Reported Scams
             </a>
+
         </nav>
 
         <div class="sidebar-user">
@@ -51,6 +118,7 @@
             </div>
 
             <div class="user-details">
+
                 <strong>
                     {{ session.first_name }}
                 </strong>
@@ -58,6 +126,7 @@
                 <small>
                     {{ session.role }}
                 </small>
+
             </div>
 
             <a
@@ -71,7 +140,6 @@
         </div>
 
     </aside>
-
 
     <main class="main-content">
 
@@ -95,13 +163,13 @@
                 </h1>
 
                 <span>
-                    Review your performance and understand each answer.
+                    Review your performance and understand
+                    each answer.
                 </span>
 
             </div>
 
         </header>
-
 
         <section class="quiz-result-hero">
 
@@ -109,7 +177,7 @@
 
                 <div
                     class="result-score-ring
-                    {% if percentage >= 70 %}
+                    {% if passed %}
                         result-pass-ring
                     {% else %}
                         result-fail-ring
@@ -132,41 +200,55 @@
 
             </div>
 
-
             <div class="result-summary-panel">
 
-                {% if percentage >= 70 %}
+                <span
+                    class="result-status-badge
+                    {% if passed %}
+                        passed
+                    {% else %}
+                        failed
+                    {% endif %}"
+                >
 
-                    <span class="result-status-badge passed">
+                    {% if passed %}
+
                         ✓ MODULE PASSED
-                    </span>
 
-                    <h2>
-                        Excellent work!
-                    </h2>
+                    {% elif percentage >= 50 %}
+
+                        REVIEW RECOMMENDED
+
+                    {% else %}
+
+                        FURTHER LEARNING REQUIRED
+
+                    {% endif %}
+
+                </span>
+
+                <h2>
+                    {{ feedback_title }}
+                </h2>
+
+                <p>
+                    {{ feedback_message }}
+                </p>
+
+                <div
+                    class="quiz-recommendation-box
+                    {{ feedback_class }}"
+                >
+
+                    <strong>
+                        Recommended next action
+                    </strong>
 
                     <p>
-                        You successfully completed the
-                        {{ module.title }} knowledge challenge.
+                        {{ recommended_action }}
                     </p>
 
-                {% else %}
-
-                    <span class="result-status-badge failed">
-                        REVIEW REQUIRED
-                    </span>
-
-                    <h2>
-                        Keep learning
-                    </h2>
-
-                    <p>
-                        Review the module lessons and try the challenge
-                        again when you feel ready.
-                    </p>
-
-                {% endif %}
-
+                </div>
 
                 <div class="result-stat-grid">
 
@@ -182,19 +264,17 @@
 
                     </div>
 
-
                     <div class="result-stat-card">
 
                         <span>
-                            Questions
+                            Incorrect Answers
                         </span>
 
                         <strong>
-                            {{ total_questions }}
+                            {{ incorrect_count }}
                         </strong>
 
                     </div>
-
 
                     <div class="result-stat-card">
 
@@ -208,19 +288,14 @@
 
                     </div>
 
-
                     <div class="result-stat-card">
 
                         <span>
-                            Status
+                            Performance
                         </span>
 
                         <strong>
-                            {% if percentage >= 70 %}
-                                Passed
-                            {% else %}
-                                Retry
-                            {% endif %}
+                            {{ performance_level }}
                         </strong>
 
                     </div>
@@ -230,7 +305,6 @@
             </div>
 
         </section>
-
 
         <section class="answer-review-shell">
 
@@ -252,7 +326,6 @@
 
                 </div>
 
-
                 <div class="review-progress-box">
 
                     <span id="reviewCounter">
@@ -262,7 +335,6 @@
                 </div>
 
             </div>
-
 
             <div class="review-progress-track">
 
@@ -274,158 +346,162 @@
 
             </div>
 
-
             {% for result in results %}
 
-            <article
-                class="answer-review-screen"
-                data-review-index="{{ loop.index0 }}"
-                {% if not loop.first %}
-                    hidden
-                {% endif %}
-            >
+                <article
+                    class="answer-review-screen"
+                    data-review-index="{{ loop.index0 }}"
+                    {% if not loop.first %}
+                        hidden
+                    {% endif %}
+                >
 
-                <div class="answer-review-layout">
+                    <div class="answer-review-layout">
 
-
-                    <div
-                        class="review-visual-panel
-                        {% if result.is_correct %}
-                            review-visual-correct
-                        {% else %}
-                            review-visual-incorrect
-                        {% endif %}"
-                    >
-
-                        <div class="review-visual-icon">
-
+                        <div
+                            class="review-visual-panel
                             {% if result.is_correct %}
-                                ✓
+                                review-visual-correct
                             {% else %}
-                                ✕
-                            {% endif %}
+                                review-visual-incorrect
+                            {% endif %}"
+                        >
 
-                        </div>
+                            <div class="review-visual-icon">
 
-                        <span class="review-visual-label">
-
-                            {% if result.is_correct %}
-                                CORRECT ANSWER
-                            {% else %}
-                                NOT QUITE
-                            {% endif %}
-
-                        </span>
-
-                        <h3>
-                            Question {{ loop.index }}
-                        </h3>
-
-                        <p>
-
-                            {% if result.is_correct %}
-
-                                You identified the safest response correctly.
-
-                            {% else %}
-
-                                Review the explanation before moving on.
-
-                            {% endif %}
-
-                        </p>
-
-                    </div>
-
-
-                    <div class="review-content-panel">
-
-                        <div class="review-question-top">
-
-                            <span class="question-number-pill">
-                                Question {{ loop.index }}
-                            </span>
-
-                            {% if result.is_correct %}
-
-                                <span class="answer-result-pill correct">
-                                    ✓ Correct
-                                </span>
-
-                            {% else %}
-
-                                <span class="answer-result-pill incorrect">
-                                    ✕ Incorrect
-                                </span>
-
-                            {% endif %}
-
-                        </div>
-
-
-                        <h2>
-                            {{ result.question_text }}
-                        </h2>
-
-
-                        <div class="answer-detail-grid">
-
-                            <div
-                                class="answer-detail-card
                                 {% if result.is_correct %}
-                                    selected-answer-correct
+                                    ✓
                                 {% else %}
-                                    selected-answer-incorrect
-                                {% endif %}"
-                            >
-
-                                <span>
-                                    Your Answer
-                                </span>
-
-                                <strong>
-                                    {{ result.selected_option }}.
-                                    {{ result.selected_answer }}
-                                </strong>
+                                    ✕
+                                {% endif %}
 
                             </div>
 
+                            <span class="review-visual-label">
 
-                            {% if not result.is_correct %}
+                                {% if result.is_correct %}
+                                    CORRECT ANSWER
+                                {% else %}
+                                    NOT QUITE
+                                {% endif %}
 
-                                <div class="answer-detail-card correct-answer-card">
+                            </span>
+
+                            <h3>
+                                Question {{ loop.index }}
+                            </h3>
+
+                            <p>
+
+                                {% if result.is_correct %}
+
+                                    You identified the safest
+                                    response correctly.
+
+                                {% else %}
+
+                                    Review the explanation before
+                                    moving to the next question.
+
+                                {% endif %}
+
+                            </p>
+
+                        </div>
+
+                        <div class="review-content-panel">
+
+                            <div class="review-question-top">
+
+                                <span class="question-number-pill">
+                                    Question {{ loop.index }}
+                                </span>
+
+                                {% if result.is_correct %}
+
+                                    <span
+                                        class="answer-result-pill correct"
+                                    >
+                                        ✓ Correct
+                                    </span>
+
+                                {% else %}
+
+                                    <span
+                                        class="answer-result-pill incorrect"
+                                    >
+                                        ✕ Incorrect
+                                    </span>
+
+                                {% endif %}
+
+                            </div>
+
+                            <h2>
+                                {{ result.question_text }}
+                            </h2>
+
+                            <div class="answer-detail-grid">
+
+                                <div
+                                    class="answer-detail-card
+                                    {% if result.is_correct %}
+                                        selected-answer-correct
+                                    {% else %}
+                                        selected-answer-incorrect
+                                    {% endif %}"
+                                >
 
                                     <span>
-                                        Correct Answer
+                                        Your Answer
                                     </span>
 
                                     <strong>
-                                        {{ result.correct_option }}.
-                                        {{ result.correct_answer }}
+                                        {{ result.selected_option }}.
+                                        {{ result.selected_answer }}
                                     </strong>
 
                                 </div>
 
-                            {% endif %}
+                                {% if not result.is_correct %}
 
-                        </div>
+                                    <div
+                                        class="answer-detail-card
+                                        correct-answer-card"
+                                    >
 
+                                        <span>
+                                            Correct Answer
+                                        </span>
 
-                        <div class="explanation-card">
+                                        <strong>
+                                            {{ result.correct_option }}.
+                                            {{ result.correct_answer }}
+                                        </strong>
 
-                            <div class="explanation-icon">
-                                💡
+                                    </div>
+
+                                {% endif %}
+
                             </div>
 
-                            <div>
+                            <div class="explanation-card">
 
-                                <span>
-                                    WHY THIS MATTERS
-                                </span>
+                                <div class="explanation-icon">
+                                    💡
+                                </div>
 
-                                <p>
-                                    {{ result.explanation }}
-                                </p>
+                                <div>
+
+                                    <span>
+                                        WHY THIS MATTERS
+                                    </span>
+
+                                    <p>
+                                        {{ result.explanation }}
+                                    </p>
+
+                                </div>
 
                             </div>
 
@@ -433,12 +509,9 @@
 
                     </div>
 
-                </div>
-
-            </article>
+                </article>
 
             {% endfor %}
-
 
             <div class="review-navigation">
 
@@ -449,7 +522,6 @@
                 >
                     ← Previous
                 </button>
-
 
                 <button
                     type="button"
@@ -463,10 +535,9 @@
 
         </section>
 
-
         <section class="result-final-actions">
 
-            {% if percentage >= 70 %}
+            {% if passed %}
 
                 <a
                     href="/awareness"
@@ -482,7 +553,7 @@
                     Continue to Next Module →
                 </a>
 
-            {% else %}
+            {% elif percentage >= 50 %}
 
                 <a
                     href="{{ url_for(
@@ -504,6 +575,25 @@
                     Try Again →
                 </a>
 
+            {% else %}
+
+                <a
+                    href="/awareness"
+                    class="result-secondary-action"
+                >
+                    Back to Learning
+                </a>
+
+                <a
+                    href="{{ url_for(
+                        'learning_module',
+                        module_id=module.module_id
+                    ) }}"
+                    class="result-primary-action"
+                >
+                    Repeat This Module →
+                </a>
+
             {% endif %}
 
         </section>
@@ -512,19 +602,17 @@
 
 </div>
 
-
 <script>
 
 document.addEventListener(
     "DOMContentLoaded",
     function () {
 
-        const reviews =
-            Array.from(
-                document.querySelectorAll(
-                    ".answer-review-screen"
-                )
-            );
+        const reviews = Array.from(
+            document.querySelectorAll(
+                ".answer-review-screen"
+            )
+        );
 
         const previousButton =
             document.getElementById(
@@ -546,73 +634,74 @@ document.addEventListener(
                 "reviewProgressFill"
             );
 
-
         let currentReview = 0;
-
-        const totalReviews =
-            reviews.length;
-
 
         function showReview(index) {
 
+            if (reviews.length === 0) {
+                return;
+            }
+
             reviews.forEach(
-                function (
-                    review,
-                    reviewIndex
-                ) {
-
-                    review.hidden =
-                        reviewIndex !== index;
-
+                function (review) {
+                    review.hidden = true;
                 }
             );
 
+            reviews[index].hidden = false;
+
+            currentReview = index;
 
             counter.textContent =
-                (index + 1)
-                + " / "
-                + totalReviews;
+                `${currentReview + 1} / ${reviews.length}`;
 
-
-            const progress =
+            const progressPercentage =
                 (
-                    (index + 1)
-                    / totalReviews
+                    (currentReview + 1)
+                    / reviews.length
                 ) * 100;
 
-
             progressFill.style.width =
-                progress + "%";
+                `${progressPercentage}%`;
 
-
-            previousButton.style.visibility =
-                index === 0
-                ? "hidden"
-                : "visible";
-
+            previousButton.disabled =
+                currentReview === 0;
 
             if (
-                index === totalReviews - 1
+                currentReview
+                === reviews.length - 1
             ) {
 
-                nextButton.textContent =
-                    "Review Complete ✓";
+                nextButton.disabled = true;
 
-                nextButton.disabled =
-                    true;
+                nextButton.textContent =
+                    "Review Complete";
 
             } else {
 
+                nextButton.disabled = false;
+
                 nextButton.textContent =
                     "Next Review →";
-
-                nextButton.disabled =
-                    false;
 
             }
 
         }
 
+        previousButton.addEventListener(
+            "click",
+            function () {
+
+                if (currentReview > 0) {
+
+                    showReview(
+                        currentReview - 1
+                    );
+
+                }
+
+            }
+        );
 
         nextButton.addEventListener(
             "click",
@@ -620,13 +709,11 @@ document.addEventListener(
 
                 if (
                     currentReview
-                    < totalReviews - 1
+                    < reviews.length - 1
                 ) {
 
-                    currentReview++;
-
                     showReview(
-                        currentReview
+                        currentReview + 1
                     );
 
                 }
@@ -634,30 +721,7 @@ document.addEventListener(
             }
         );
 
-
-        previousButton.addEventListener(
-            "click",
-            function () {
-
-                if (
-                    currentReview > 0
-                ) {
-
-                    currentReview--;
-
-                    showReview(
-                        currentReview
-                    );
-
-                }
-
-            }
-        );
-
-
-        showReview(
-            currentReview
-        );
+        showReview(0);
 
     }
 );
