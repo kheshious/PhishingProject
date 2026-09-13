@@ -46,8 +46,16 @@
                 🌐 URL Scanner
             </a>
 
+            <a href="/ocr-scanner">
+                📷 OCR Scanner
+            </a>
+
             <a href="/history">
                 📊 Detection History
+            </a>
+
+            <a href="/model-performance">
+                📈 Model Performance
             </a>
 
             <a href="/awareness">
@@ -63,7 +71,6 @@
             </a>
 
         </nav>
-
 
         <div class="sidebar-user">
 
@@ -95,7 +102,6 @@
 
     </aside>
 
-
     <main class="main-content">
 
         <header class="topbar">
@@ -110,7 +116,6 @@
 
         </header>
 
-
         <section class="scanner-grid">
 
             <div class="scan-card">
@@ -120,11 +125,10 @@
                 </h2>
 
                 <p>
-                    Paste the email subject and body below.
-                    PhishAI will analyse the content using the
-                    trained email model.
+                    PhishAI will analyse the email and show
+                    its prediction, model confidence, phishing
+                    risk score and recommended safety actions.
                 </p>
-
 
                 <form method="POST">
 
@@ -140,7 +144,6 @@
                         placeholder="Paste the email subject and message here..."
                         required
                     >{{ result.submitted_content if result else "" }}</textarea>
-
 
                     <div class="form-footer">
 
@@ -176,7 +179,6 @@
 
                 </div>
 
-
                 <h3>
                     Common warning signs
                 </h3>
@@ -209,9 +211,7 @@
 
         </section>
 
-
         {% if result %}
-
 
         <section
             class="result-panel"
@@ -232,7 +232,6 @@
 
             </div>
 
-
             <div class="result-cards">
 
                 <div class="mini-card">
@@ -247,11 +246,10 @@
 
                 </div>
 
-
                 <div class="mini-card">
 
                     <h3>
-                        Confidence
+                        Model Confidence
                     </h3>
 
                     <p>
@@ -260,36 +258,33 @@
 
                 </div>
 
-
                 <div class="mini-card">
 
                     <h3>
-                        Content Type
+                        Phishing Risk Score
                     </h3>
 
                     <p>
-                        Email
+                        {{ result.risk_score }}%
                     </p>
 
                 </div>
 
             </div>
 
-
             <div class="risk-meter-container">
 
                 <div class="risk-meter-header">
 
                     <h3>
-                        AI Risk Score
+                        Phishing Risk Score
                     </h3>
 
                     <span>
-                        {{ result.confidence }}%
+                        {{ result.risk_score }}%
                     </span>
 
                 </div>
-
 
                 <div class="risk-bar">
 
@@ -302,56 +297,26 @@
                         {% else %}
                             low
                         {% endif %}"
-                        style="width: {{ result.confidence }}%;"
+                        style="width: {{ result.risk_score }}%;"
                     >
                     </div>
 
                 </div>
 
+                <small>
+                    Low: below 40% |
+                    Medium: 40%–69.99% |
+                    High: 70% and above
+                </small>
+
             </div>
-
-
-            <!-- ==========================================
-                 EXPLANATION
-            =========================================== -->
 
             <div class="insight-grid">
 
                 <div class="analysis-box">
 
                     <h3>
-                        🧠 Why was it classified this way?
-                    </h3>
-
-                    {% if result.reasons %}
-
-                        <ul>
-
-                            {% for reason in result.reasons %}
-
-                                <li>
-                                    {{ reason }}
-                                </li>
-
-                            {% endfor %}
-
-                        </ul>
-
-                    {% else %}
-
-                        <p>
-                            No additional explanation is available.
-                        </p>
-
-                    {% endif %}
-
-                </div>
-
-
-                <div class="analysis-box">
-
-                    <h3>
-                        ⚠️ Recommended Action
+                        ⚠️ Recommended Actions
                     </h3>
 
                     {% if result.actions %}
@@ -381,11 +346,6 @@
 
             </div>
 
-
-            <!-- ==========================================
-                 PERSONALISED LEARNING
-            =========================================== -->
-
             {% if result.recommended_modules %}
 
                 <section class="smart-learning-section">
@@ -397,17 +357,16 @@
                         </span>
 
                         <h2>
-                            Recommended for this threat
+                            Recommended for this result
                         </h2>
 
                         <p>
-                            Based on the type and content of this email,
-                            these learning modules can help you understand
-                            the risks involved.
+                            These modules are recommended according
+                            to the content type, prediction and
+                            indicators found in the email.
                         </p>
 
                     </div>
-
 
                     <div class="smart-learning-grid">
 
@@ -423,11 +382,8 @@
                                 <div class="smart-learning-card-top">
 
                                     <div class="smart-learning-module-icon">
-
                                         {{ module.icon }}
-
                                     </div>
-
 
                                     {% if loop.first %}
 
@@ -445,27 +401,17 @@
 
                                 </div>
 
-
                                 <span class="smart-learning-category">
-
                                     {{ module.category }}
-
                                 </span>
 
-
                                 <h3>
-
                                     {{ module.title }}
-
                                 </h3>
 
-
                                 <p>
-
                                     {{ module.description }}
-
                                 </p>
-
 
                                 <a
                                     href="{{ url_for(
@@ -485,17 +431,13 @@
 
                 </section>
 
-
             {% elif result.recommended_module %}
 
                 <section class="scanner-learning-recommendation">
 
                     <div class="scanner-learning-icon">
-
                         {{ result.recommended_module.icon }}
-
                     </div>
-
 
                     <div class="scanner-learning-content">
 
@@ -514,7 +456,6 @@
 
                     </div>
 
-
                     <a
                         href="{{ url_for(
                             'learning_module',
@@ -529,8 +470,7 @@
 
             {% endif %}
 
-
-            {% if result.prediction in ["Phishing", "Suspicious"] %}
+            {% if result.prediction == "Phishing" %}
 
                 <form
                     method="POST"
@@ -555,7 +495,6 @@
                         name="reported_content"
                         value="{{ result.submitted_content }}"
                     >
-
 
                     <button
                         type="submit"

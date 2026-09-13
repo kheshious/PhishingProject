@@ -11,9 +11,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import os
 import sys
+import csv
+
+from pathlib import Path
 from machine_learning.ocr_service import perform_ocr_from_bytes
+from email_service import send_report_review_email
+from dotenv import load_dotenv
 
-
+load_dotenv()
 sys.path.append(
     os.path.join(
         os.path.dirname(__file__),
@@ -1933,9 +1938,13 @@ def awareness():
     user_id = session["user_id"]
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("""
+    cursor = conn.cursor(
+        dictionary=True
+    )
+
+    cursor.execute(
+        """
         SELECT
             lm.module_id,
             lm.title,
@@ -1943,22 +1952,29 @@ def awareness():
             lm.description,
             lm.icon,
             lm.display_order,
+
             COALESCE(
                 ulp.best_quiz_score,
                 0
             ) AS best_quiz_score,
+
             COALESCE(
                 ulp.module_completed,
                 0
             ) AS module_completed
+
         FROM learning_modules lm
+
         LEFT JOIN user_learning_progress ulp
             ON ulp.module_id = lm.module_id
             AND ulp.user_id = %s
+
         ORDER BY lm.display_order
-    """, (
-        user_id,
-    ))
+        """,
+        (
+            user_id,
+        )
+    )
 
     modules = cursor.fetchall()
 
@@ -1984,10 +2000,129 @@ def awareness():
             progress["progress_percentage"]
         )
 
+        module["all_lessons_completed"] = (
+            progress["all_lessons_completed"]
+        )
+
+        best_quiz_score = float(
+            module["best_quiz_score"]
+            or 0
+        )
+
+        passed_quiz = (
+            best_quiz_score >= 70
+        )
+
+        module["module_completed"] = bool(
+            module["module_completed"]
+            or passed_quiz
+        )
+
+        # -------------------------------------------------
+        # DETERMINE CLEAR LEARNING STATUS
+        # -------------------------------------------------
+
+        if module["module_completed"]:
+
+            module["learning_status"] = (
+                "Completed"
+            )
+
+            module["status_class"] = (
+                "completed"
+            )
+
+            module["action_text"] = (
+                "Review Module"
+            )
+
+            module["action_endpoint"] = (
+                "learning_module"
+            )
+
+        elif (
+            module["all_lessons_completed"]
+            and best_quiz_score > 0
+        ):
+
+            module["learning_status"] = (
+                "Quiz Retry Required"
+            )
+
+            module["status_class"] = (
+                "quiz-retry"
+            )
+
+            module["action_text"] = (
+                "Retry Quiz"
+            )
+
+            module["action_endpoint"] = (
+                "module_quiz"
+            )
+
+        elif module["all_lessons_completed"]:
+
+            module["learning_status"] = (
+                "Ready for Quiz"
+            )
+
+            module["status_class"] = (
+                "quiz-ready"
+            )
+
+            module["action_text"] = (
+                "Take Quiz"
+            )
+
+            module["action_endpoint"] = (
+                "module_quiz"
+            )
+
+        elif module["lessons_completed"] > 0:
+
+            module["learning_status"] = (
+                "In Progress"
+            )
+
+            module["status_class"] = (
+                "progress"
+            )
+
+            module["action_text"] = (
+                "Continue Learning"
+            )
+
+            module["action_endpoint"] = (
+                "learning_module"
+            )
+
+        else:
+
+            module["learning_status"] = (
+                "Not Started"
+            )
+
+            module["status_class"] = (
+                "not-started"
+            )
+
+            module["action_text"] = (
+                "Start Learning"
+            )
+
+            module["action_endpoint"] = (
+                "learning_module"
+            )
+
     scored_modules = [
-        float(module["best_quiz_score"])
+        float(
+            module["best_quiz_score"]
+        )
         for module in modules
-        if float(module["best_quiz_score"]) > 0
+        if float(
+            module["best_quiz_score"]
+        ) > 0
     ]
 
     awareness_score = (
@@ -2010,13 +2145,13 @@ def awareness():
 @user_required
 def scam_reports():
 
+    user_id = session["user_id"]
+
     conn = get_db_connection()
 
     cursor = conn.cursor(
         dictionary=True
     )
-
-    user_id = session["user_id"]
 
     cursor.execute(
         """
@@ -2025,8 +2160,12 @@ def scam_reports():
             report_type,
             reported_content,
             description,
+            report_date,
             status,
-            report_date
+            admin_feedback,
+            reviewed_at,
+            notification_status,
+            notification_sent_at
         FROM scam_reports
         WHERE user_id = %s
         ORDER BY report_date DESC
@@ -2038,9 +2177,47 @@ def scam_reports():
 
     reports = cursor.fetchall()
 
+    # -------------------------------------------------
+    # GET REPORT SUMMARY
+    # -------------------------------------------------
+
     cursor.execute(
         """
-        SELECT COUNT(*) AS total
+        SELECT
+            COUNT(*) AS total_reports,
+
+            SUM(
+                CASE
+                    WHEN status = 'Pending'
+                    THEN 1
+                    ELSE 0
+                END
+            ) AS pending_reports,
+
+            SUM(
+                CASE
+                    WHEN status = 'Reviewed'
+                    THEN 1
+                    ELSE 0
+                END
+            ) AS reviewed_reports,
+
+            SUM(
+                CASE
+                    WHEN status = 'Confirmed Scam'
+                    THEN 1
+                    ELSE 0
+                END
+            ) AS confirmed_reports,
+
+            SUM(
+                CASE
+                    WHEN status = 'Not a Scam'
+                    THEN 1
+                    ELSE 0
+                END
+            ) AS not_scam_reports
+
         FROM scam_reports
         WHERE user_id = %s
         """,
@@ -2049,86 +2226,58 @@ def scam_reports():
         )
     )
 
-    total_reports = (
-        cursor.fetchone()["total"]
-        or 0
+    summary = (
+        cursor.fetchone()
+        or {}
     )
-
-    cursor.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM scam_reports
-        WHERE user_id = %s
-          AND status = 'Pending'
-        """,
-        (
-            user_id,
-        )
-    )
-
-    pending_reports = (
-        cursor.fetchone()["total"]
-        or 0
-    )
-
-    cursor.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM scam_reports
-        WHERE user_id = %s
-          AND status = 'Reviewed'
-        """,
-        (
-            user_id,
-        )
-    )
-
-    reviewed_reports = (
-        cursor.fetchone()["total"]
-        or 0
-    )
-
-    cursor.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM scam_reports
-        WHERE user_id = %s
-          AND status = 'Confirmed Scam'
-        """,
-        (
-            user_id,
-        )
-    )
-
-    confirmed_reports = (
-        cursor.fetchone()["total"]
-        or 0
-    )
-
 
     cursor.close()
-
     conn.close()
 
+    total_reports = int(
+        summary.get(
+            "total_reports"
+        )
+        or 0
+    )
+
+    pending_reports = int(
+        summary.get(
+            "pending_reports"
+        )
+        or 0
+    )
+
+    reviewed_reports = int(
+        summary.get(
+            "reviewed_reports"
+        )
+        or 0
+    )
+
+    confirmed_reports = int(
+        summary.get(
+            "confirmed_reports"
+        )
+        or 0
+    )
+
+    not_scam_reports = int(
+        summary.get(
+            "not_scam_reports"
+        )
+        or 0
+    )
 
     return render_template(
         "scam_reports.html",
-
         reports=reports,
-
         total_reports=total_reports,
-
         pending_reports=pending_reports,
-
         reviewed_reports=reviewed_reports,
-
         confirmed_reports=confirmed_reports,
+        not_scam_reports=not_scam_reports,
     )
-
-
-# =========================================================
-# ADMIN - VIEW ALL SCAM REPORTS
-# =========================================================
 
 @app.route("/admin/scam-reports")
 @admin_required
@@ -2261,15 +2410,17 @@ def admin_scam_reports():
     methods=["POST"]
 )
 @admin_required
-def admin_update_report_status(
-    report_id
-):
+def admin_update_report_status(report_id):
 
     new_status = request.form.get(
         "status",
         ""
-    )
+    ).strip()
 
+    admin_feedback = request.form.get(
+        "admin_feedback",
+        ""
+    ).strip()
 
     allowed_statuses = {
         "Pending",
@@ -2277,7 +2428,6 @@ def admin_update_report_status(
         "Confirmed Scam",
         "Not a Scam",
     }
-
 
     if new_status not in allowed_statuses:
 
@@ -2292,37 +2442,283 @@ def admin_update_report_status(
             )
         )
 
+    if (
+        new_status != "Pending"
+        and not admin_feedback
+    ):
+
+        flash(
+            "Please provide feedback before completing the review.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "admin_scam_reports"
+            )
+        )
 
     conn = get_db_connection()
 
-    cursor = conn.cursor()
+    cursor = conn.cursor(
+        dictionary=True
+    )
 
+    try:
 
-    cursor.execute(
-        """
-        UPDATE scam_reports
-        SET status = %s
-        WHERE report_id = %s
-        """,
-        (
-            new_status,
-            report_id,
+        # -------------------------------------------------
+        # GET REPORT AND REPORTING USER
+        # -------------------------------------------------
+
+        cursor.execute(
+            """
+            SELECT
+                sr.report_id,
+                sr.report_type,
+                sr.reported_content,
+                sr.description,
+                sr.report_date,
+                sr.status,
+                sr.admin_feedback,
+                sr.reviewed_at,
+                sr.notification_status,
+                sr.user_id,
+                u.first_name,
+                u.last_name,
+                u.email
+            FROM scam_reports sr
+
+            LEFT JOIN users u
+                ON u.user_id = sr.user_id
+
+            WHERE sr.report_id = %s
+            """,
+            (
+                report_id,
+            )
         )
-    )
 
+        report = cursor.fetchone()
 
-    conn.commit()
+        if not report:
 
-    cursor.close()
+            flash(
+                "Scam report not found.",
+                "error"
+            )
 
-    conn.close()
+            return redirect(
+                url_for(
+                    "admin_scam_reports"
+                )
+            )
 
+        # -------------------------------------------------
+        # MOVE REPORT BACK TO PENDING
+        # -------------------------------------------------
 
-    flash(
-        "Report status updated successfully.",
-        "success"
-    )
+        if new_status == "Pending":
 
+            cursor.execute(
+                """
+                UPDATE scam_reports
+                SET
+                    status = %s,
+                    admin_feedback = NULL,
+                    reviewed_at = NULL,
+                    reviewed_by = NULL,
+                    notification_status = 'Not Sent',
+                    notification_sent_at = NULL,
+                    notification_error = NULL
+                WHERE report_id = %s
+                """,
+                (
+                    new_status,
+                    report_id,
+                )
+            )
+
+            conn.commit()
+
+            flash(
+                "The report was returned to pending review.",
+                "success"
+            )
+
+            return redirect(
+                url_for(
+                    "admin_scam_reports"
+                )
+            )
+
+        # -------------------------------------------------
+        # SAVE ADMIN REVIEW FIRST
+        # -------------------------------------------------
+
+        cursor.execute(
+            """
+            UPDATE scam_reports
+            SET
+                status = %s,
+                admin_feedback = %s,
+                reviewed_at = NOW(),
+                reviewed_by = %s,
+                notification_status = 'Not Sent',
+                notification_sent_at = NULL,
+                notification_error = NULL
+            WHERE report_id = %s
+            """,
+            (
+                new_status,
+                admin_feedback,
+                session["user_id"],
+                report_id,
+            )
+        )
+
+        conn.commit()
+
+        # Update the dictionary with the latest review values
+        # before passing it to the email service.
+
+        report["status"] = new_status
+        report["admin_feedback"] = admin_feedback
+
+        # -------------------------------------------------
+        # CHECK USER EMAIL
+        # -------------------------------------------------
+
+        if not report.get("email"):
+
+            notification_error = (
+                "The reporting user does not have "
+                "an email address."
+            )
+
+            cursor.execute(
+                """
+                UPDATE scam_reports
+                SET
+                    notification_status = 'Failed',
+                    notification_sent_at = NULL,
+                    notification_error = %s
+                WHERE report_id = %s
+                """,
+                (
+                    notification_error,
+                    report_id,
+                )
+            )
+
+            conn.commit()
+
+            flash(
+                (
+                    "The review was saved, but the user does "
+                    "not have an email address."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "admin_scam_reports"
+                )
+            )
+
+        # -------------------------------------------------
+        # SEND EMAIL NOTIFICATION
+        # -------------------------------------------------
+
+        try:
+
+            send_report_review_email(
+                report
+            )
+
+            cursor.execute(
+                """
+                UPDATE scam_reports
+                SET
+                    notification_status = 'Sent',
+                    notification_sent_at = NOW(),
+                    notification_error = NULL
+                WHERE report_id = %s
+                """,
+                (
+                    report_id,
+                )
+            )
+
+            conn.commit()
+
+            flash(
+                (
+                    "Report review saved successfully. "
+                    f"Email notification sent to "
+                    f"{report['email']}."
+                ),
+                "success"
+            )
+
+        except Exception as email_error:
+
+            notification_error = str(
+                email_error
+            )[:1000]
+
+            cursor.execute(
+                """
+                UPDATE scam_reports
+                SET
+                    notification_status = 'Failed',
+                    notification_sent_at = NULL,
+                    notification_error = %s
+                WHERE report_id = %s
+                """,
+                (
+                    notification_error,
+                    report_id,
+                )
+            )
+
+            conn.commit()
+
+            print(
+                "Report notification email failed:",
+                email_error
+            )
+
+            flash(
+                (
+                    "The report review was saved, but the "
+                    "email notification could not be sent. "
+                    "Check the email configuration."
+                ),
+                "warning"
+            )
+
+    except Exception as database_error:
+
+        conn.rollback()
+
+        print(
+            "Report review database error:",
+            database_error
+        )
+
+        flash(
+            (
+                "The report review could not be saved "
+                "because of a database error."
+            ),
+            "error"
+        )
+
+    finally:
+
+        cursor.close()
+        conn.close()
 
     return redirect(
         url_for(
@@ -3283,6 +3679,209 @@ def submit_module_quiz(module_id):
         recommended_action=recommended_action,
         feedback_class=feedback_class,
         results=results,
+    )
+
+
+# =========================================================
+# MODEL PERFORMANCE
+# =========================================================
+
+def load_model_performance_results():
+
+    base_directory = (
+        Path(__file__).resolve().parent
+    )
+
+    model_directory = (
+        base_directory
+        / "model"
+    )
+
+    result_files = [
+        {
+            "scanner_name": "Email Scanner",
+            "scanner_type": "Email",
+            "icon": "📧",
+            "filename": "email_model_results_v2.csv",
+        },
+        {
+            "scanner_name": "SMS Scanner",
+            "scanner_type": "SMS",
+            "icon": "💬",
+            "filename": "sms_model_results_v2.csv",
+        },
+        {
+            "scanner_name": "URL Scanner",
+            "scanner_type": "URL",
+            "icon": "🌐",
+            "filename": "url_model_results_v3.csv",
+        },
+    ]
+
+    scanner_results = []
+
+    for result_file in result_files:
+
+        file_path = (
+            model_directory
+            / result_file["filename"]
+        )
+
+        models = []
+        load_error = None
+
+        try:
+
+            with open(
+                file_path,
+                mode="r",
+                encoding="utf-8-sig",
+                newline="",
+            ) as csv_file:
+
+                reader = csv.DictReader(
+                    csv_file
+                )
+
+                for row in reader:
+
+                    models.append(
+                        {
+                            "model_name":
+                                row.get(
+                                    "Model",
+                                    "Unknown Model"
+                                ).strip(),
+
+                            "accuracy":
+                                round(
+                                    float(
+                                        row.get(
+                                            "Validation Accuracy",
+                                            0
+                                        )
+                                        or 0
+                                    ) * 100,
+                                    2
+                                ),
+
+                            "precision":
+                                round(
+                                    float(
+                                        row.get(
+                                            "Validation Precision",
+                                            0
+                                        )
+                                        or 0
+                                    ) * 100,
+                                    2
+                                ),
+
+                            "recall":
+                                round(
+                                    float(
+                                        row.get(
+                                            "Validation Recall",
+                                            0
+                                        )
+                                        or 0
+                                    ) * 100,
+                                    2
+                                ),
+
+                            "f1_score":
+                                round(
+                                    float(
+                                        row.get(
+                                            "Validation F1",
+                                            0
+                                        )
+                                        or 0
+                                    ) * 100,
+                                    2
+                                ),
+
+                            "selected":
+                                False,
+                        }
+                    )
+
+        except FileNotFoundError:
+
+            load_error = (
+                "Results file not found: "
+                f"{result_file['filename']}"
+            )
+
+        except (
+            ValueError,
+            KeyError,
+            OSError
+        ) as error:
+
+            load_error = (
+                "Unable to read the model results: "
+                f"{error}"
+            )
+
+        selected_model = None
+
+        if models:
+
+            selected_model = max(
+                models,
+                key=lambda model: (
+                    model["f1_score"],
+                    model["accuracy"],
+                    model["precision"],
+                    model["recall"],
+                )
+            )
+
+            selected_model["selected"] = True
+
+        scanner_results.append(
+            {
+                "scanner_name":
+                    result_file[
+                        "scanner_name"
+                    ],
+
+                "scanner_type":
+                    result_file[
+                        "scanner_type"
+                    ],
+
+                "icon":
+                    result_file[
+                        "icon"
+                    ],
+
+                "models":
+                    models,
+
+                "selected_model":
+                    selected_model,
+
+                "load_error":
+                    load_error,
+            }
+        )
+
+    return scanner_results
+
+
+@app.route("/model-performance")
+@user_required
+def model_performance():
+
+    scanner_results = (
+        load_model_performance_results()
+    )
+
+    return render_template(
+        "model_performance.html",
+        scanner_results=scanner_results,
     )
 
 

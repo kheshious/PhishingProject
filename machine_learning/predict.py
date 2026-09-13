@@ -13,6 +13,19 @@ model = joblib.load(MODEL_PATH)
 vectorizer = joblib.load(VECTORIZER_PATH)
 
 
+def calculate_sms_risk(
+    smishing_probability: float
+) -> str:
+
+    if smishing_probability >= 70:
+        return "High"
+
+    if smishing_probability >= 40:
+        return "Medium"
+
+    return "Low"
+
+
 def predict_message(message: str) -> dict:
 
     if not isinstance(message, str) or not message.strip():
@@ -32,21 +45,20 @@ def predict_message(message: str) -> dict:
         vectorised_message
     )[0]
 
-    class_index = list(
+    model_classes = list(
         model.classes_
-    ).index(predicted_class)
-
-    confidence = float(
-        probabilities[class_index] * 100
     )
 
-    legitimate_index = list(
-        model.classes_
-    ).index(0)
+    predicted_class_index = model_classes.index(
+        predicted_class
+    )
 
-    smishing_index = list(
-        model.classes_
-    ).index(1)
+    legitimate_index = model_classes.index(0)
+    smishing_index = model_classes.index(1)
+
+    confidence = float(
+        probabilities[predicted_class_index] * 100
+    )
 
     legitimate_probability = float(
         probabilities[legitimate_index] * 100
@@ -56,48 +68,56 @@ def predict_message(message: str) -> dict:
         probabilities[smishing_index] * 100
     )
 
+    risk_level = calculate_sms_risk(
+        smishing_probability
+    )
+
     if predicted_class == 1:
 
         prediction = "Phishing"
-        risk_level = "High"
-
-        reasons = [
-            (
-                "The trained machine-learning model detected "
-                "patterns associated with smishing messages."
-            )
-        ]
+        display_prediction = "Smishing"
 
         recommended_actions = [
             "Do not reply to the message.",
             "Do not click unexpected links.",
-            "Do not provide passwords, PINs, OTPs or banking details.",
-            "Verify the message using an official communication channel.",
-            "Report the message if you believe it is fraudulent.",
+            (
+                "Do not provide passwords, PINs, OTPs "
+                "or banking details."
+            ),
+            (
+                "Verify the message using an official "
+                "communication channel."
+            ),
+            (
+                "Report the message if you believe "
+                "it is fraudulent."
+            ),
         ]
 
     else:
 
         prediction = "Legitimate"
-        risk_level = "Low"
-
-        reasons = [
-            (
-                "The trained machine-learning model did not detect "
-                "strong patterns associated with smishing."
-            )
-        ]
+        display_prediction = "Legitimate"
 
         recommended_actions = [
             (
-                "No immediate action is required, but verify unexpected "
-                "requests before sharing sensitive information."
+                "No immediate action is required, but "
+                "verify unexpected requests before sharing "
+                "sensitive information."
             )
         ]
 
     return {
         "prediction": prediction,
-        "confidence": round(confidence, 2),
+        "display_prediction": display_prediction,
+        "confidence": round(
+            confidence,
+            2
+        ),
+        "risk_score": round(
+            smishing_probability,
+            2
+        ),
         "risk_level": risk_level,
         "model_prediction": predicted_class,
         "legitimate_probability": round(
@@ -108,7 +128,6 @@ def predict_message(message: str) -> dict:
             smishing_probability,
             2
         ),
-        "reasons": reasons,
         "recommended_actions": recommended_actions,
     }
 
@@ -148,24 +167,30 @@ if __name__ == "__main__":
 
     for message in test_messages:
 
-        result = predict_message(message)
+        result = predict_message(
+            message
+        )
 
         print("\n" + "=" * 70)
-
         print(message.strip())
 
         print(
             "\nPrediction:",
-            result["prediction"]
+            result["display_prediction"]
         )
 
         print(
-            "Confidence:",
+            "Model confidence:",
             f'{result["confidence"]}%'
         )
 
         print(
-            "Risk:",
+            "Smishing risk score:",
+            f'{result["risk_score"]}%'
+        )
+
+        print(
+            "Risk level:",
             result["risk_level"]
         )
 

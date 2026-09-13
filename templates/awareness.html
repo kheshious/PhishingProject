@@ -2,24 +2,54 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Awareness Centre | PhishAI</title>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Awareness Centre | PhishAI
+    </title>
 
     <link
         rel="stylesheet"
         href="{{ url_for('static', filename='style.css') }}"
     >
+
+    <style>
+
+        .module-status.quiz-ready {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .module-status.quiz-retry {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+    </style>
+
 </head>
+
 
 <body>
 
 <div class="layout">
 
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
     <aside class="sidebar">
 
-        <h2>🛡️ PhishAI</h2>
+        <h2>
+            🛡️ PhishAI
+        </h2>
 
         <nav>
 
@@ -39,8 +69,16 @@
                 🌐 URL Scanner
             </a>
 
+            <a href="/ocr-scanner">
+                📷 OCR Scanner
+            </a>
+
             <a href="/history">
                 📊 Detection History
+            </a>
+
+            <a href="/model-performance">
+                📈 Model Performance
             </a>
 
             <a
@@ -58,7 +96,17 @@
                 📋 Reported Scams
             </a>
 
+
+            {% if session.role == "Admin" %}
+
+                <a href="/admin/scam-reports">
+                    🛡️ Manage Scam Reports
+                </a>
+
+            {% endif %}
+
         </nav>
+
 
         <div class="sidebar-user">
 
@@ -91,7 +139,16 @@
     </aside>
 
 
+    <!-- =====================================================
+         MAIN CONTENT
+    ====================================================== -->
+
     <main class="main-content">
+
+
+        <!-- =================================================
+             PAGE HEADER
+        ================================================== -->
 
         <header class="topbar">
 
@@ -106,6 +163,10 @@
 
         </header>
 
+
+        <!-- =================================================
+             LEARNING SUMMARY
+        ================================================== -->
 
         <section class="learning-summary">
 
@@ -151,6 +212,10 @@
         </section>
 
 
+        <!-- =================================================
+             LEARNING MODULES
+        ================================================== -->
+
         <section class="learning-section">
 
             <div class="learning-section-heading">
@@ -162,7 +227,8 @@
                     </h2>
 
                     <p>
-                        Choose a topic to start learning.
+                        Complete each lesson before attempting
+                        the module quiz.
                     </p>
 
                 </div>
@@ -180,34 +246,48 @@
 
                     <article class="learning-module-card">
 
+
+                        <!-- MODULE ICON AND STATUS -->
+
                         <div class="module-top-row">
 
                             <div class="module-icon">
                                 {{ module.icon }}
                             </div>
 
-                            {% if module.module_completed %}
 
-                                <span class="module-status completed">
+                            <span
+                                class="module-status {{ module.status_class }}"
+                            >
+
+                                {% if module.learning_status == "Completed" %}
+
                                     ✓ Completed
-                                </span>
 
-                            {% elif module.lessons_completed > 0 %}
+                                {% elif module.learning_status == "Ready for Quiz" %}
 
-                                <span class="module-status progress">
+                                    📝 Ready for Quiz
+
+                                {% elif module.learning_status == "Quiz Retry Required" %}
+
+                                    ↻ Quiz Retry Required
+
+                                {% elif module.learning_status == "In Progress" %}
+
                                     In Progress
-                                </span>
 
-                            {% else %}
+                                {% else %}
 
-                                <span class="module-status not-started">
                                     Not Started
-                                </span>
 
-                            {% endif %}
+                                {% endif %}
+
+                            </span>
 
                         </div>
 
+
+                        <!-- MODULE INFORMATION -->
 
                         <span class="module-category">
                             {{ module.category }}
@@ -221,6 +301,8 @@
                             {{ module.description }}
                         </p>
 
+
+                        <!-- MODULE STATISTICS -->
 
                         <div class="module-stat-row">
 
@@ -265,31 +347,18 @@
                         </div>
 
 
-                        {% if module.lesson_count > 0 %}
-
-                            {% set progress = (
-                                module.lessons_completed
-                                / module.lesson_count
-                                * 100
-                            ) %}
-
-                        {% else %}
-
-                            {% set progress = 0 %}
-
-                        {% endif %}
-
+                        <!-- LESSON PROGRESS -->
 
                         <div class="module-progress">
 
                             <div class="module-progress-header">
 
                                 <span>
-                                    Progress
+                                    Lesson Progress
                                 </span>
 
                                 <span>
-                                    {{ progress|round|int }}%
+                                    {{ module.progress_percentage|round|int }}%
                                 </span>
 
                             </div>
@@ -299,7 +368,7 @@
 
                                 <div
                                     class="module-progress-fill"
-                                    style="width: {{ progress }}%"
+                                    style="width: {{ module.progress_percentage }}%;"
                                 >
                                 </div>
 
@@ -308,30 +377,16 @@
                         </div>
 
 
+                        <!-- MODULE ACTION -->
+
                         <a
                             href="{{ url_for(
-                                'learning_module',
+                                module.action_endpoint,
                                 module_id=module.module_id
                             ) }}"
                             class="module-action"
                         >
-
-                            {% if module.module_completed %}
-
-                                Review Module
-
-                            {% elif module.lessons_completed > 0 %}
-
-                                Continue Learning
-
-                            {% else %}
-
-                                Start Learning
-
-                            {% endif %}
-
-                            →
-
+                            {{ module.action_text }} →
                         </a>
 
                     </article>

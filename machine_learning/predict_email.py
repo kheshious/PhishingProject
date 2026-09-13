@@ -13,6 +13,19 @@ model = joblib.load(MODEL_PATH)
 vectorizer = joblib.load(VECTORIZER_PATH)
 
 
+def calculate_email_risk(
+    phishing_probability: float
+) -> str:
+
+    if phishing_probability >= 70:
+        return "High"
+
+    if phishing_probability >= 40:
+        return "Medium"
+
+    return "Low"
+
+
 def predict_email(email_text: str) -> dict:
 
     if not isinstance(email_text, str) or not email_text.strip():
@@ -32,34 +45,36 @@ def predict_email(email_text: str) -> dict:
         vectorised_text
     )[0]
 
-    class_index = list(
+    model_classes = list(
         model.classes_
-    ).index(predicted_class)
+    )
+
+    predicted_class_index = model_classes.index(
+        predicted_class
+    )
+
+    legitimate_index = model_classes.index(0)
+    phishing_index = model_classes.index(1)
 
     confidence = float(
-        probabilities[class_index] * 100
+        probabilities[predicted_class_index] * 100
     )
-
-    phishing_index = list(
-        model.classes_
-    ).index(1)
-
-    phishing_probability = float(
-        probabilities[phishing_index] * 100
-    )
-
-    legitimate_index = list(
-        model.classes_
-    ).index(0)
 
     legitimate_probability = float(
         probabilities[legitimate_index] * 100
     )
 
+    phishing_probability = float(
+        probabilities[phishing_index] * 100
+    )
+
+    risk_level = calculate_email_risk(
+        phishing_probability
+    )
+
     if predicted_class == 1:
 
         prediction = "Phishing"
-        risk_level = "High"
 
         reasons = [
             (
@@ -69,34 +84,53 @@ def predict_email(email_text: str) -> dict:
         ]
 
         recommended_actions = [
-            "Avoid clicking links or opening unexpected attachments.",
-            "Do not provide passwords, PINs, OTPs or banking details.",
-            "Verify the sender through an official communication channel.",
-            "Report the email if you believe it is fraudulent.",
+            (
+                "Avoid clicking links or opening "
+                "unexpected attachments."
+            ),
+            (
+                "Do not provide passwords, PINs, OTPs "
+                "or banking details."
+            ),
+            (
+                "Verify the sender through an official "
+                "communication channel."
+            ),
+            (
+                "Report the email if you believe "
+                "it is fraudulent."
+            ),
         ]
 
     else:
 
         prediction = "Legitimate"
-        risk_level = "Low"
 
         reasons = [
             (
-                "The trained machine-learning model did not detect "
-                "strong patterns associated with phishing."
+                "The trained machine-learning model did not "
+                "detect strong patterns associated with phishing."
             )
         ]
 
         recommended_actions = [
             (
-                "No immediate action is required, but always verify "
-                "unexpected requests before sharing sensitive information."
+                "No immediate action is required, but always "
+                "verify unexpected requests before sharing "
+                "sensitive information."
             )
         ]
 
     return {
         "prediction": prediction,
-        "confidence": round(confidence, 2),
+        "confidence": round(
+            confidence,
+            2
+        ),
+        "risk_score": round(
+            phishing_probability,
+            2
+        ),
         "risk_level": risk_level,
         "model_prediction": predicted_class,
         "phishing_probability": round(
@@ -166,13 +200,12 @@ if __name__ == "__main__":
 
     for email in test_emails:
 
-        result = predict_email(email)
+        result = predict_email(
+            email
+        )
 
         print("\n" + "=" * 70)
-
-        print(
-            email.strip()[:200]
-        )
+        print(email.strip()[:200])
 
         print(
             "\nPrediction:",
@@ -180,12 +213,17 @@ if __name__ == "__main__":
         )
 
         print(
-            "Confidence:",
+            "Model confidence:",
             f'{result["confidence"]}%'
         )
 
         print(
-            "Risk:",
+            "Phishing risk score:",
+            f'{result["risk_score"]}%'
+        )
+
+        print(
+            "Risk level:",
             result["risk_level"]
         )
 

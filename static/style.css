@@ -6517,3 +6517,270 @@ background:#f5f9ff;
 .admin-review-button:hover {
     background: #1557a3;
 }
+
+.quiz-recommendation-box {
+    margin-top: 20px;
+    padding: 16px 18px;
+    border-left: 4px solid #2563eb;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #1e3a8a;
+}
+
+.quiz-recommendation-box strong {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.quiz-recommendation-box p {
+    margin: 0;
+    line-height: 1.6;
+}
+.admin-review-cell {
+    min-width: 110px;
+    text-align: center;
+}
+
+.admin-review-button {
+    border: none;
+    border-radius: 8px;
+    background: #1769c7;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 18px;
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.admin-review-button:hover {
+    background: #0f56aa;
+    transform: translateY(-1px);
+}
+
+body.modal-open {
+    overflow: hidden;
+}
+
+.report-review-modal[hidden] {
+    display: none;
+}
+
+.report-review-modal {
+    position: fixed;
+    z-index: 2000;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.report-review-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.68);
+    backdrop-filter: blur(3px);
+}
+
+.report-review-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(620px, 100%);
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
+    padding: 28px;
+}
+
+.report-review-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 18px;
+}
+
+.review-modal-eyebrow {
+    display: block;
+    margin-bottom: 5px;
+    color: #1769c7;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.report-review-header h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 24px;
+}
+
+.report-review-header p {
+    margin: 6px 0 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.review-modal-close {
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #334155;
+    cursor: pointer;
+    font-size: 24px;
+    line-height: 1;
+}
+
+.review-report-summary {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.review-summary-item {
+    border: 1px solid #dbe3ee;
+    border-radius: 10px;
+    background: #f8fafc;
+    padding: 13px 15px;
+}
+
+.review-summary-item span,
+.review-content-preview > span {
+    display: block;
+    margin-bottom: 5px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.review-summary-item strong {
+    color: #0f172a;
+    font-size: 14px;
+}
+
+.review-content-preview {
+    margin-top: 14px;
+    border-left: 4px solid #1769c7;
+    border-radius: 8px;
+    background: #eff6ff;
+    padding: 14px 16px;
+}
+
+.review-content-preview p {
+    max-height: 110px;
+    margin: 0;
+    overflow-y: auto;
+    color: #334155;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.report-review-form {
+    margin-top: 20px;
+}
+
+.review-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 17px;
+}
+
+.review-form-group label {
+    color: #1e293b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.review-form-group select,
+.review-form-group textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #0f172a;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 11px 12px;
+}
+
+.review-form-group textarea {
+    min-height: 130px;
+    resize: vertical;
+}
+
+.review-form-group select:focus,
+.review-form-group textarea:focus {
+    border-color: #1769c7;
+    outline: 3px solid rgba(23, 105, 199, 0.12);
+}
+
+.review-form-group small {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.review-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 18px;
+}
+
+.review-cancel-button {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 18px;
+}
+
+@media (max-width: 640px) {
+    .report-review-modal {
+        align-items: flex-end;
+        padding: 12px;
+    }
+
+    .report-review-dialog {
+        padding: 21px;
+    }
+
+    .review-report-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .review-modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .review-modal-actions button {
+        width: 100%;
+    }
+}
+
+.module-status.quiz-ready {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.module-status.quiz-retry {
+    background: #fee2e2;
+    color: #b91c1c;
+}

@@ -37,12 +37,11 @@
             🛡️ PhishAI
         </h2>
 
-
         <nav>
 
             <a
                 class="active"
-                href="/admin/scam-reports"
+                href="{{ url_for('admin_scam_reports') }}"
             >
                 📋 Manage Scam Reports
             </a>
@@ -83,7 +82,6 @@
     </aside>
 
 
-
     <!-- =====================================================
          ADMIN MAIN CONTENT
     ====================================================== -->
@@ -108,13 +106,36 @@
         </header>
 
 
+        <!-- =================================================
+             FLASH MESSAGES
+        ================================================== -->
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+
+                <div class="flash-message-container">
+
+                    {% for category, message in messages %}
+
+                        <div class="flash-message {{ category }}">
+                            {{ message }}
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% endif %}
+
+        {% endwith %}
+
 
         <!-- =================================================
-             SUMMARY
+             SUMMARY CARDS
         ================================================== -->
 
         <section class="history-summary-grid">
-
 
             <div class="history-summary-card">
 
@@ -184,16 +205,30 @@
             </div>
 
 
+            <div class="history-summary-card">
+
+                <div class="history-summary-icon">
+                    ✅
+                </div>
+
+                <span>
+                    Not a Scam
+                </span>
+
+                <strong>
+                    {{ not_scam_reports }}
+                </strong>
+
+            </div>
+
         </section>
 
 
-
         <!-- =================================================
-             REPORT MANAGEMENT
+             REPORT MANAGEMENT TABLE
         ================================================== -->
 
         <section class="history-table-panel">
-
 
             <div class="history-table-heading">
 
@@ -205,23 +240,29 @@
                     User Scam Reports
                 </h2>
 
+                <p>
+                    Select a report to review its content, update its
+                    status and provide feedback to the user.
+                </p>
+
             </div>
 
 
             {% if reports %}
 
-
                 <div class="history-table-wrapper">
-
 
                     <table
                         class="history-table enhanced-history-table"
                     >
 
-
                         <thead>
 
                             <tr>
+
+                                <th>
+                                    Reference
+                                </th>
 
                                 <th>
                                     Date
@@ -258,21 +299,32 @@
 
                         <tbody>
 
-
                             {% for report in reports %}
-
 
                                 <tr>
 
+                                    <!-- REPORT REFERENCE -->
 
-                                    <!-- DATE -->
+                                    <td>
+
+                                        <strong class="report-reference">
+
+                                            SCAM-{{ '%04d'|format(
+                                                report.report_id
+                                            ) }}
+
+                                        </strong>
+
+                                    </td>
+
+
+                                    <!-- REPORT DATE -->
 
                                     <td class="history-date-cell">
 
                                         {{ report.report_date }}
 
                                     </td>
-
 
 
                                     <!-- USER -->
@@ -293,8 +345,7 @@
                                     </td>
 
 
-
-                                    <!-- TYPE -->
+                                    <!-- REPORT TYPE -->
 
                                     <td>
 
@@ -328,8 +379,7 @@
                                     </td>
 
 
-
-                                    <!-- CONTENT -->
+                                    <!-- REPORTED CONTENT -->
 
                                     <td
                                         class="history-content-cell"
@@ -341,12 +391,11 @@
                                     </td>
 
 
-
-                                    <!-- DESCRIPTION -->
+                                    <!-- USER DESCRIPTION -->
 
                                     <td
                                         class="history-explanation-cell"
-                                        title="{{ report.description }}"
+                                        title="{{ report.description or '' }}"
                                     >
 
                                         {% if report.description %}
@@ -362,30 +411,20 @@
                                     </td>
 
 
-
-                                    <!-- CURRENT STATUS -->
+                                    <!-- STATUS -->
 
                                     <td>
 
                                         <span
                                             class="report-status-badge
-
                                             {% if report.status == 'Confirmed Scam' %}
-
                                                 confirmed
-
                                             {% elif report.status == 'Not a Scam' %}
-
                                                 safe
-
                                             {% elif report.status == 'Reviewed' %}
-
                                                 reviewed
-
                                             {% else %}
-
                                                 pending
-
                                             {% endif %}"
                                         >
 
@@ -393,105 +432,73 @@
 
                                         </span>
 
+
+                                        {% if report.notification_status %}
+
+                                            <div class="table-notification-status">
+
+                                                <small>
+                                                    Email:
+                                                </small>
+
+                                                <span
+                                                    class="notification-status-badge
+                                                    {% if report.notification_status == 'Sent' %}
+                                                        sent
+                                                    {% elif report.notification_status == 'Failed' %}
+                                                        failed
+                                                    {% else %}
+                                                        not-sent
+                                                    {% endif %}"
+                                                >
+                                                    {{ report.notification_status }}
+                                                </span>
+
+                                            </div>
+
+                                        {% endif %}
+
                                     </td>
 
 
+                                    <!-- REVIEW BUTTON -->
 
-                                    <!-- ADMIN REVIEW -->
+                                    <td class="admin-review-cell">
 
-                                    <td>
-
-
-                                        <form
-                                            method="POST"
-                                            action="{{ url_for(
+                                        <button
+                                            type="button"
+                                            class="admin-review-button open-review-modal"
+                                            data-action="{{ url_for(
                                                 'admin_update_report_status',
                                                 report_id=report.report_id
                                             ) }}"
-                                            class="admin-report-status-form"
+                                            data-reference="SCAM-{{ '%04d'|format(
+                                                report.report_id
+                                            ) }}"
+                                            data-type="{{ report.report_type }}"
+                                            data-content="{{ report.reported_content|e }}"
+                                            data-description="{{ (report.description or '')|e }}"
+                                            data-status="{{ report.status }}"
+                                            data-feedback="{{ (report.admin_feedback or '')|e }}"
+                                            data-notification="{{ report.notification_status or 'Not Sent' }}"
+                                            data-reviewed-at="{{ report.reviewed_at or '' }}"
                                         >
-
-
-                                            <select
-                                                name="status"
-                                                required
-                                            >
-
-
-                                                <option
-                                                    value="Pending"
-                                                    {% if report.status == "Pending" %}
-                                                        selected
-                                                    {% endif %}
-                                                >
-                                                    Pending
-                                                </option>
-
-
-                                                <option
-                                                    value="Reviewed"
-                                                    {% if report.status == "Reviewed" %}
-                                                        selected
-                                                    {% endif %}
-                                                >
-                                                    Reviewed
-                                                </option>
-
-
-                                                <option
-                                                    value="Confirmed Scam"
-                                                    {% if report.status == "Confirmed Scam" %}
-                                                        selected
-                                                    {% endif %}
-                                                >
-                                                    Confirmed Scam
-                                                </option>
-
-
-                                                <option
-                                                    value="Not a Scam"
-                                                    {% if report.status == "Not a Scam" %}
-                                                        selected
-                                                    {% endif %}
-                                                >
-                                                    Not a Scam
-                                                </option>
-
-
-                                            </select>
-
-
-                                            <button
-                                                type="submit"
-                                                class="admin-review-button"
-                                            >
-                                                Update
-                                            </button>
-
-
-                                        </form>
-
+                                            Review
+                                        </button>
 
                                     </td>
 
-
                                 </tr>
-
 
                             {% endfor %}
 
-
                         </tbody>
-
 
                     </table>
 
-
                 </div>
 
-
             {% else %}
-
 
                 <div class="history-empty-state">
 
@@ -510,17 +517,473 @@
 
                 </div>
 
-
             {% endif %}
 
-
         </section>
-
 
     </main>
 
 </div>
 
+
+<!-- =====================================================
+     REPORT REVIEW MODAL
+====================================================== -->
+
+<div
+    id="reportReviewModal"
+    class="report-review-modal"
+    hidden
+>
+
+    <div class="report-review-modal-overlay"></div>
+
+
+    <div
+        class="report-review-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reviewModalTitle"
+    >
+
+        <!-- MODAL HEADER -->
+
+        <div class="report-review-header">
+
+            <div>
+
+                <span class="review-modal-eyebrow">
+                    ADMIN REVIEW
+                </span>
+
+                <h2 id="reviewModalTitle">
+                    Review Scam Report
+                </h2>
+
+                <p id="reviewReportReference">
+                    Report reference
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="closeReviewModal"
+                class="review-modal-close"
+                aria-label="Close review window"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <!-- REPORT SUMMARY -->
+
+        <div class="review-report-summary">
+
+            <div class="review-summary-item">
+
+                <span>
+                    Report Type
+                </span>
+
+                <strong id="reviewReportType">
+                    —
+                </strong>
+
+            </div>
+
+
+            <div class="review-summary-item">
+
+                <span>
+                    Email Notification
+                </span>
+
+                <strong id="reviewNotificationStatus">
+                    Not Sent
+                </strong>
+
+            </div>
+
+
+            <div class="review-summary-item review-date-summary">
+
+                <span>
+                    Reviewed At
+                </span>
+
+                <strong id="reviewedAt">
+                    Not reviewed
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- SUBMITTED CONTENT -->
+
+        <div class="review-content-preview">
+
+            <span>
+                Submitted Content
+            </span>
+
+            <p id="reviewSubmittedContent">
+                —
+            </p>
+
+        </div>
+
+
+        <!-- USER DESCRIPTION -->
+
+        <div
+            id="reviewDescriptionContainer"
+            class="review-description-preview"
+        >
+
+            <span>
+                User Description
+            </span>
+
+            <p id="reviewDescription">
+                No description provided
+            </p>
+
+        </div>
+
+
+        <!-- REVIEW FORM -->
+
+        <form
+            method="POST"
+            id="reportReviewForm"
+            class="report-review-form"
+        >
+
+            <div class="review-form-group">
+
+                <label for="reviewStatus">
+                    Review Status
+                </label>
+
+                <select
+                    id="reviewStatus"
+                    name="status"
+                    required
+                >
+
+                    <option value="Pending">
+                        Pending
+                    </option>
+
+                    <option value="Reviewed">
+                        Reviewed
+                    </option>
+
+                    <option value="Confirmed Scam">
+                        Confirmed Scam
+                    </option>
+
+                    <option value="Not a Scam">
+                        Not a Scam
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="review-form-group">
+
+                <label for="reviewFeedback">
+                    Feedback to User
+                </label>
+
+                <textarea
+                    id="reviewFeedback"
+                    name="admin_feedback"
+                    rows="6"
+                    maxlength="1000"
+                    placeholder="Explain the review result and recommend what the user should do..."
+                ></textarea>
+
+                <small>
+                    Feedback is required when the report is no longer pending.
+                </small>
+
+            </div>
+
+
+            <div class="review-modal-actions">
+
+                <button
+                    type="button"
+                    id="cancelReviewModal"
+                    class="review-cancel-button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="admin-review-button"
+                >
+                    Save Review
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     MODAL JAVASCRIPT
+====================================================== -->
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const modal =
+            document.getElementById(
+                "reportReviewModal"
+            );
+
+        const reviewForm =
+            document.getElementById(
+                "reportReviewForm"
+            );
+
+        const reference =
+            document.getElementById(
+                "reviewReportReference"
+            );
+
+        const reportType =
+            document.getElementById(
+                "reviewReportType"
+            );
+
+        const submittedContent =
+            document.getElementById(
+                "reviewSubmittedContent"
+            );
+
+        const description =
+            document.getElementById(
+                "reviewDescription"
+            );
+
+        const notificationStatus =
+            document.getElementById(
+                "reviewNotificationStatus"
+            );
+
+        const reviewedAt =
+            document.getElementById(
+                "reviewedAt"
+            );
+
+        const statusSelect =
+            document.getElementById(
+                "reviewStatus"
+            );
+
+        const feedback =
+            document.getElementById(
+                "reviewFeedback"
+            );
+
+        const closeButton =
+            document.getElementById(
+                "closeReviewModal"
+            );
+
+        const cancelButton =
+            document.getElementById(
+                "cancelReviewModal"
+            );
+
+        const overlay =
+            modal.querySelector(
+                ".report-review-modal-overlay"
+            );
+
+        const reviewButtons =
+            document.querySelectorAll(
+                ".open-review-modal"
+            );
+
+
+        function openModal(button) {
+
+            reviewForm.action =
+                button.dataset.action;
+
+            reference.textContent =
+                button.dataset.reference;
+
+            reportType.textContent =
+                button.dataset.type;
+
+            submittedContent.textContent =
+                button.dataset.content;
+
+            description.textContent =
+                button.dataset.description
+                || "No description provided";
+
+            notificationStatus.textContent =
+                button.dataset.notification
+                || "Not Sent";
+
+            reviewedAt.textContent =
+                button.dataset.reviewedAt
+                || "Not reviewed";
+
+            statusSelect.value =
+                button.dataset.status;
+
+            feedback.value =
+                button.dataset.feedback;
+
+            feedback.setCustomValidity("");
+
+            modal.hidden = false;
+
+            document.body.classList.add(
+                "modal-open"
+            );
+
+            statusSelect.focus();
+
+        }
+
+
+        function closeModal() {
+
+            modal.hidden = true;
+
+            document.body.classList.remove(
+                "modal-open"
+            );
+
+            feedback.setCustomValidity("");
+
+        }
+
+
+        reviewButtons.forEach(
+            function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        openModal(
+                            button
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+        closeButton.addEventListener(
+            "click",
+            closeModal
+        );
+
+
+        cancelButton.addEventListener(
+            "click",
+            closeModal
+        );
+
+
+        overlay.addEventListener(
+            "click",
+            closeModal
+        );
+
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Escape"
+                    && !modal.hidden
+                ) {
+
+                    closeModal();
+
+                }
+
+            }
+        );
+
+
+        reviewForm.addEventListener(
+            "submit",
+            function (event) {
+
+                const selectedStatus =
+                    statusSelect.value;
+
+                const enteredFeedback =
+                    feedback.value.trim();
+
+
+                if (
+                    selectedStatus !== "Pending"
+                    && !enteredFeedback
+                ) {
+
+                    event.preventDefault();
+
+                    feedback.setCustomValidity(
+                        "Please enter feedback for the user."
+                    );
+
+                    feedback.reportValidity();
+
+                    return;
+
+                }
+
+                feedback.setCustomValidity("");
+
+            }
+        );
+
+
+        feedback.addEventListener(
+            "input",
+            function () {
+
+                feedback.setCustomValidity("");
+
+            }
+        );
+
+    }
+);
+
+</script>
 
 </body>
 

@@ -3,7 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>URL Scanner | PhishAI</title>
 
@@ -22,7 +26,10 @@
         <h2>🛡️ PhishAI</h2>
 
         <nav>
-            <a href="/">🏠 Dashboard</a>
+
+            <a href="/">
+                🏠 Dashboard
+            </a>
 
             <a href="/email-scanner">
                 📧 Email Scanner
@@ -39,8 +46,16 @@
                 🌐 URL Scanner
             </a>
 
+            <a href="/ocr-scanner">
+                📷 OCR Scanner
+            </a>
+
             <a href="/history">
                 📊 Detection History
+            </a>
+
+            <a href="/model-performance">
+                📈 Model Performance
             </a>
 
             <a href="/awareness">
@@ -54,6 +69,7 @@
             <a href="/scam-reports">
                 📋 Reported Scams
             </a>
+
         </nav>
 
         <div class="sidebar-user">
@@ -86,12 +102,13 @@
 
     </aside>
 
-
     <main class="main-content">
 
         <header class="topbar">
 
-            <h1>URL Scanner</h1>
+            <h1>
+                URL Scanner
+            </h1>
 
             <span>
                 Analyse website URLs using machine learning
@@ -100,20 +117,24 @@
 
         </header>
 
-
         <section class="scanner-grid">
 
             <div class="scan-card url-scan-card">
 
-                <h2>Paste a Website URL</h2>
+                <h2>
+                    Paste a Website URL
+                </h2>
 
                 <p>
-                    PhishAI will analyse the structure and patterns
-                    of the URL and predict whether it is legitimate
-                    or malicious.
+                    PhishAI will analyse the URL and show its
+                    prediction, model confidence, malicious risk
+                    score and recommended safety actions.
                 </p>
 
-                <form method="POST" class="url-scan-form">
+                <form
+                    method="POST"
+                    class="url-scan-form"
+                >
 
                     <div class="url-input-group">
 
@@ -136,7 +157,6 @@
 
                     </div>
 
-
                     <div class="form-footer url-form-footer">
 
                         <small>
@@ -157,7 +177,6 @@
 
             </div>
 
-
             <div class="scan-help">
 
                 <div class="ai-graphic small">
@@ -172,9 +191,12 @@
 
                 </div>
 
-                <h3>Common warning signs</h3>
+                <h3>
+                    Common warning signs
+                </h3>
 
                 <ul>
+
                     <li>
                         Misspelled or unusual website names
                     </li>
@@ -194,12 +216,12 @@
                     <li>
                         Long or unusual URL structures
                     </li>
+
                 </ul>
 
             </div>
 
         </section>
-
 
         {% if result %}
 
@@ -212,14 +234,15 @@
 
                     <div class="result-header">
 
-                        <h2>Detection Result</h2>
+                        <h2>
+                            Detection Result
+                        </h2>
 
                         <span class="badge low">
                             Invalid URL
                         </span>
 
                     </div>
-
 
                     <div class="analysis-box invalid-url-box">
 
@@ -230,24 +253,6 @@
                         <p>
                             {{ result.validation_error }}
                         </p>
-
-
-                        {% if result.reasons %}
-
-                            <ul>
-
-                                {% for reason in result.reasons %}
-
-                                    <li>
-                                        {{ reason }}
-                                    </li>
-
-                                {% endfor %}
-
-                            </ul>
-
-                        {% endif %}
-
 
                         <h3>
                             Examples of valid website URLs
@@ -263,7 +268,6 @@
 
                 </section>
 
-
             {% else %}
 
                 <section
@@ -273,7 +277,9 @@
 
                     <div class="result-header">
 
-                        <h2>Detection Result</h2>
+                        <h2>
+                            Detection Result
+                        </h2>
 
                         <span
                             class="badge {{ result.risk_level|lower }}"
@@ -283,36 +289,19 @@
 
                     </div>
 
-
-                    <div class="result-cards url-result-cards">
+                    <div class="result-cards">
 
                         <div class="mini-card">
 
                             <h3>
-                                Final Prediction
+                                Prediction
                             </h3>
 
-                            <p
-                                class="{% if result.prediction == 'Malicious' %}prediction-danger{% else %}prediction-safe{% endif %}"
-                            >
+                            <p>
                                 {{ result.prediction }}
                             </p>
 
                         </div>
-
-
-                        <div class="mini-card">
-
-                            <h3>
-                                Model Prediction
-                            </h3>
-
-                            <p>
-                                {{ result.model_display_prediction }}
-                            </p>
-
-                        </div>
-
 
                         <div class="mini-card">
 
@@ -326,61 +315,58 @@
 
                         </div>
 
-
                         <div class="mini-card">
 
                             <h3>
-                                Decision Source
+                                Malicious Risk Score
                             </h3>
 
-                            <p class="decision-source">
-                                {{ result.decision_source }}
+                            <p>
+                                {{ result.risk_score }}%
                             </p>
 
                         </div>
 
                     </div>
 
-
-                    <div class="model-confidence-container">
+                    <div class="risk-meter-container">
 
                         <div class="risk-meter-header">
 
                             <h3>
-                                Machine-Learning Confidence
+                                Malicious Risk Score
                             </h3>
 
                             <span>
-                                {{ result.model_confidence }}%
+                                {{ result.risk_score }}%
                             </span>
 
                         </div>
 
-                        <p class="confidence-description">
-
-                            The model predicted
-
-                            <strong>
-                                {{ result.model_display_prediction }}
-                            </strong>
-
-                            with {{ result.model_confidence }}%
-                            confidence.
-
-                        </p>
-
                         <div class="risk-bar">
 
                             <div
-                                class="risk-fill {% if result.prediction == 'Malicious' %}malicious-confidence-fill{% else %}legitimate-confidence-fill{% endif %}"
-                                style="width: {{ result.model_confidence }}%"
+                                class="risk-fill
+                                {% if result.risk_level == 'High' %}
+                                    high
+                                {% elif result.risk_level == 'Medium' %}
+                                    medium
+                                {% else %}
+                                    low
+                                {% endif %}"
+                                style="width: {{ result.risk_score }}%;"
                             >
                             </div>
 
                         </div>
 
-                    </div>
+                        <small>
+                            Low: below 40% |
+                            Medium: 40%–69.99% |
+                            High: 70% and above
+                        </small>
 
+                    </div>
 
                     <div class="probability-grid">
 
@@ -410,7 +396,6 @@
 
                     </div>
 
-
                     {% if result.url_segments %}
 
                         <div class="url-analysis-section">
@@ -418,16 +403,15 @@
                             <div class="url-analysis-heading">
 
                                 <h3>
-                                    🔍 AI URL Visual Analysis
+                                    🔍 URL Analysis
                                 </h3>
 
                                 <p>
-                                    The URL below is the content analysed
-                                    by the trained model.
+                                    The URL below is the content
+                                    analysed by the trained model.
                                 </p>
 
                             </div>
-
 
                             <div
                                 class="url-visual-analysis
@@ -455,81 +439,16 @@
 
                             </div>
 
-
-                            <div class="url-analysis-legend">
-
-                                {% if result.prediction == "Malicious" %}
-
-                                    <div class="legend-item">
-
-                                        <span
-                                            class="legend-colour suspicious-colour"
-                                        >
-                                        </span>
-
-                                        Model detected malicious URL patterns
-
-                                    </div>
-
-                                {% else %}
-
-                                    <div class="legend-item">
-
-                                        <span
-                                            class="legend-colour safe-colour"
-                                        >
-                                        </span>
-
-                                        No strong malicious URL patterns detected
-
-                                    </div>
-
-                                {% endif %}
-
-                            </div>
-
                         </div>
 
                     {% endif %}
-
 
                     <div class="insight-grid">
 
                         <div class="analysis-box">
 
                             <h3>
-                                🧠 Why was it classified this way?
-                            </h3>
-
-                            {% if result.reasons %}
-
-                                <ul>
-
-                                    {% for reason in result.reasons %}
-
-                                        <li>
-                                            {{ reason }}
-                                        </li>
-
-                                    {% endfor %}
-
-                                </ul>
-
-                            {% else %}
-
-                                <p>
-                                    No additional explanation is available.
-                                </p>
-
-                            {% endif %}
-
-                        </div>
-
-
-                        <div class="analysis-box">
-
-                            <h3>
-                                ✅ Recommended Action
+                                ✅ Recommended Actions
                             </h3>
 
                             {% if result.actions %}
@@ -549,21 +468,20 @@
                             {% else %}
 
                                 <p>
-                                    Continue to exercise normal online
-                                    security precautions.
+                                    Continue to exercise normal
+                                    online security precautions.
                                 </p>
 
                             {% endif %}
 
                         </div>
 
-
                         {% if result.warnings %}
 
                             <div class="analysis-box security-warning-box">
 
                                 <h3>
-                                    ⚠ Security Warnings
+                                    ⚠️ Security Warnings
                                 </h3>
 
                                 <ul>
@@ -584,146 +502,131 @@
 
                     </div>
 
-
-                    <!-- =================================================
-                         RECOMMENDED LEARNING
-                    ================================================== -->
-
                     {% if result.recommended_modules %}
 
-                    <section class="smart-learning-section">
+                        <section class="smart-learning-section">
 
-                        <div class="smart-learning-heading">
+                            <div class="smart-learning-heading">
 
-                            <span class="scanner-learning-label">
-                                PERSONALISED LEARNING
-                            </span>
+                                <span class="scanner-learning-label">
+                                    PERSONALISED LEARNING
+                                </span>
 
-                            <h2>
-                                Recommended for this threat
-                            </h2>
+                                <h2>
+                                    Recommended for this result
+                                </h2>
 
-                            <p>
-                                Based on the type and structure of this URL,
-                                these learning modules can help you understand
-                                the risks involved.
-                            </p>
+                                <p>
+                                    These modules are recommended
+                                    according to the URL prediction
+                                    and detected indicators.
+                                </p>
 
-                        </div>
+                            </div>
 
+                            <div class="smart-learning-grid">
 
-                        <div class="smart-learning-grid">
+                                {% for module in result.recommended_modules %}
 
-                            {% for module in result.recommended_modules %}
+                                    <article
+                                        class="smart-learning-card
+                                        {% if loop.first %}
+                                            primary-learning-card
+                                        {% endif %}"
+                                    >
 
-                                <article
-                                    class="smart-learning-card
-                                    {% if loop.first %}
-                                        primary-learning-card
-                                    {% endif %}"
-                                >
+                                        <div class="smart-learning-card-top">
 
-                                    <div class="smart-learning-card-top">
+                                            <div class="smart-learning-module-icon">
+                                                {{ module.icon }}
+                                            </div>
 
-                                        <div class="smart-learning-module-icon">
-                                            {{ module.icon }}
+                                            {% if loop.first %}
+
+                                                <span class="primary-recommendation-badge">
+                                                    PRIMARY
+                                                </span>
+
+                                            {% else %}
+
+                                                <span class="secondary-recommendation-badge">
+                                                    RELATED
+                                                </span>
+
+                                            {% endif %}
+
                                         </div>
 
-                                        {% if loop.first %}
+                                        <span class="smart-learning-category">
+                                            {{ module.category }}
+                                        </span>
 
-                                            <span class="primary-recommendation-badge">
-                                                PRIMARY
-                                            </span>
+                                        <h3>
+                                            {{ module.title }}
+                                        </h3>
 
-                                        {% else %}
+                                        <p>
+                                            {{ module.description }}
+                                        </p>
 
-                                            <span class="secondary-recommendation-badge">
-                                                RELATED
-                                            </span>
+                                        <a
+                                            href="{{ url_for(
+                                                'learning_module',
+                                                module_id=module.module_id
+                                            ) }}"
+                                            class="smart-learning-button"
+                                        >
+                                            Start Learning →
+                                        </a>
 
-                                        {% endif %}
+                                    </article>
 
-                                    </div>
+                                {% endfor %}
 
+                            </div>
 
-                                    <span class="smart-learning-category">
-                                        {{ module.category }}
-                                    </span>
+                        </section>
 
+                    {% elif result.recommended_module %}
 
-                                    <h3>
-                                        {{ module.title }}
-                                    </h3>
+                        <section class="scanner-learning-recommendation">
 
+                            <div class="scanner-learning-icon">
+                                {{ result.recommended_module.icon }}
+                            </div>
 
-                                    <p>
-                                        {{ module.description }}
-                                    </p>
+                            <div class="scanner-learning-content">
 
+                                <span class="scanner-learning-label">
+                                    RECOMMENDED LEARNING
+                                </span>
 
-                                    <a
-                                        href="{{ url_for(
-                                            'learning_module',
-                                            module_id=module.module_id
-                                        ) }}"
-                                        class="smart-learning-button"
-                                    >
-                                        Start Learning →
-                                    </a>
+                                <h3>
+                                    Learn more about
+                                    {{ result.recommended_module.title }}
+                                </h3>
 
-                                </article>
+                                <p>
+                                    {{ result.recommended_module.description }}
+                                </p>
 
-                            {% endfor %}
+                            </div>
 
-                        </div>
+                            <a
+                                href="{{ url_for(
+                                    'learning_module',
+                                    module_id=result.recommended_module.module_id
+                                ) }}"
+                                class="scanner-learning-button"
+                            >
+                                Start Learning →
+                            </a>
 
-                    </section>
+                        </section>
 
+                    {% endif %}
 
-                {% elif result.recommended_module %}
-
-                    <section class="scanner-learning-recommendation">
-
-                        <div class="scanner-learning-icon">
-                            {{ result.recommended_module.icon }}
-                        </div>
-
-                        <div class="scanner-learning-content">
-
-                            <span class="scanner-learning-label">
-                                RECOMMENDED LEARNING
-                            </span>
-
-                            <h3>
-                                Learn more about
-                                {{ result.recommended_module.title }}
-                            </h3>
-
-                            <p>
-                                {{ result.recommended_module.description }}
-                            </p>
-
-                        </div>
-
-                        <a
-                            href="{{ url_for(
-                                'learning_module',
-                                module_id=result.recommended_module.module_id
-                            ) }}"
-                            class="scanner-learning-button"
-                        >
-                            Start Learning →
-                        </a>
-
-                    </section>
-
-                {% endif %}
-
-                    <!-- =================================================
-                         REPORT WEBSITE
-                    ================================================== -->
-
-                    {% if result.prediction != "Legitimate" %}
+                    {% if result.prediction == "Malicious" %}
 
                         <form
                             method="POST"
@@ -770,31 +673,30 @@
 
 </div>
 
-
 {% if result %}
 
 <script>
 
-    document.addEventListener(
-        "DOMContentLoaded",
-        function () {
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
-            const resultSection =
-                document.getElementById(
-                    "detection-result"
-                );
+        const resultSection =
+            document.getElementById(
+                "detection-result"
+            );
 
-            if (resultSection) {
+        if (resultSection) {
 
-                resultSection.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
-                });
-
-            }
+            resultSection.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
 
         }
-    );
+
+    }
+);
 
 </script>
 

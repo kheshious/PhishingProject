@@ -19,6 +19,268 @@
         href="{{ url_for('static', filename='style.css') }}"
     >
 
+    <style>
+
+        .user-report-reference {
+            color: #0f4fa3;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .report-details-cell {
+            text-align: center;
+        }
+
+        .view-report-button {
+            border: none;
+            border-radius: 8px;
+            background: #1769c7;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 9px 14px;
+            white-space: nowrap;
+        }
+
+        .view-report-button:hover {
+            background: #0f56aa;
+        }
+
+        .view-report-button.pending {
+            background: #64748b;
+        }
+
+        body.report-modal-open {
+            overflow: hidden;
+        }
+
+        .user-report-modal[hidden] {
+            display: none;
+        }
+
+        .user-report-modal {
+            position: fixed;
+            z-index: 2000;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .user-report-modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.68);
+            backdrop-filter: blur(3px);
+        }
+
+        .user-report-dialog {
+            position: relative;
+            z-index: 1;
+            width: min(680px, 100%);
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
+            border-radius: 18px;
+            background: #ffffff;
+            box-shadow:
+                0 24px 70px
+                rgba(15, 23, 42, 0.30);
+            padding: 28px;
+        }
+
+        .user-report-dialog-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 18px;
+        }
+
+        .user-report-dialog-header h2 {
+            margin: 4px 0 0;
+            color: #0f172a;
+            font-size: 24px;
+        }
+
+        .user-report-dialog-header p {
+            margin: 7px 0 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .report-modal-eyebrow {
+            color: #1769c7;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+        }
+
+        .user-report-modal-close {
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: #334155;
+            cursor: pointer;
+            font-size: 24px;
+            line-height: 1;
+        }
+
+        .user-report-summary-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .user-report-summary-card {
+            border: 1px solid #dbe3ee;
+            border-radius: 10px;
+            background: #f8fafc;
+            padding: 13px 15px;
+        }
+
+        .user-report-summary-card span {
+            display: block;
+            margin-bottom: 5px;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .user-report-summary-card strong {
+            color: #0f172a;
+            font-size: 14px;
+        }
+
+        .user-report-detail-section {
+            margin-top: 18px;
+        }
+
+        .user-report-detail-section > span {
+            display: block;
+            margin-bottom: 7px;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .user-report-content-box,
+        .user-report-description-box,
+        .user-report-feedback-box {
+            max-height: 170px;
+            overflow-y: auto;
+            border-radius: 9px;
+            padding: 15px 17px;
+            color: #334155;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+
+        .user-report-content-box {
+            border-left: 4px solid #1769c7;
+            background: #eff6ff;
+        }
+
+        .user-report-description-box {
+            border-left: 4px solid #64748b;
+            background: #f8fafc;
+        }
+
+        .user-report-feedback-box {
+            border-left: 4px solid #16a34a;
+            background: #f0fdf4;
+        }
+
+        .user-report-feedback-box.pending {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+            color: #92400e;
+        }
+
+        .user-report-notification {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 17px;
+        }
+
+        .user-report-notification span {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .notification-result {
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 5px 10px;
+        }
+
+        .notification-result.sent {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .notification-result.failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .notification-result.not-sent {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .user-report-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 22px;
+        }
+
+        .close-report-details-button {
+            border: none;
+            border-radius: 8px;
+            background: #1769c7;
+            color: #ffffff;
+            cursor: pointer;
+            font-weight: 700;
+            padding: 11px 20px;
+        }
+
+        @media (max-width: 750px) {
+
+            .user-report-modal {
+                align-items: flex-end;
+                padding: 12px;
+            }
+
+            .user-report-dialog {
+                padding: 21px;
+            }
+
+            .user-report-summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
 </head>
 
 
@@ -26,6 +288,10 @@
 
 <div class="layout">
 
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
 
     <aside class="sidebar">
 
@@ -51,8 +317,16 @@
                 🌐 URL Scanner
             </a>
 
+            <a href="/ocr-scanner">
+                📷 OCR Scanner
+            </a>
+
             <a href="/history">
                 📊 Detection History
+            </a>
+
+            <a href="/model-performance">
+                📈 Model Performance
             </a>
 
             <a href="/awareness">
@@ -85,11 +359,8 @@
         <div class="sidebar-user">
 
             <div class="user-avatar">
-
                 {{ session.first_name[0]|upper }}
-
             </div>
-
 
             <div class="user-details">
 
@@ -102,7 +373,6 @@
                 </small>
 
             </div>
-
 
             <a
                 href="/logout"
@@ -117,9 +387,11 @@
     </aside>
 
 
+    <!-- =====================================================
+         MAIN CONTENT
+    ====================================================== -->
 
     <main class="main-content">
-
 
         <header class="topbar">
 
@@ -128,15 +400,18 @@
             </h1>
 
             <span>
-                Track the scam reports you have submitted
+                Track your submitted reports and review
+                administrator feedback
             </span>
 
         </header>
 
 
+        <!-- =================================================
+             SUMMARY
+        ================================================== -->
 
         <section class="history-summary-grid">
-
 
             <div class="history-summary-card">
 
@@ -206,12 +481,30 @@
             </div>
 
 
+            <div class="history-summary-card">
+
+                <div class="history-summary-icon">
+                    ✅
+                </div>
+
+                <span>
+                    Not a Scam
+                </span>
+
+                <strong>
+                    {{ not_scam_reports }}
+                </strong>
+
+            </div>
+
         </section>
 
 
+        <!-- =================================================
+             REPORT TABLE
+        ================================================== -->
 
         <section class="history-table-panel">
-
 
             <div class="history-table-heading">
 
@@ -223,6 +516,11 @@
                     Submitted Scam Reports
                 </h2>
 
+                <p>
+                    Open a report to view its review decision
+                    and administrator feedback.
+                </p>
+
             </div>
 
 
@@ -230,11 +528,17 @@
 
                 <div class="history-table-wrapper">
 
-                    <table class="history-table enhanced-history-table">
+                    <table
+                        class="history-table enhanced-history-table"
+                    >
 
                         <thead>
 
                             <tr>
+
+                                <th>
+                                    Reference
+                                </th>
 
                                 <th>
                                     Date
@@ -249,11 +553,11 @@
                                 </th>
 
                                 <th>
-                                    Description
+                                    Status
                                 </th>
 
                                 <th>
-                                    Status
+                                    Details
                                 </th>
 
                             </tr>
@@ -263,10 +567,19 @@
 
                         <tbody>
 
-
                             {% for report in reports %}
 
                                 <tr>
+
+                                    <td>
+
+                                        <strong class="user-report-reference">
+
+                                            SCAM-{{ report.report_date.year }}-{{ '%04d'|format(report.report_id) }}
+
+                                        </strong>
+
+                                    </td>
 
 
                                     <td class="history-date-cell">
@@ -318,24 +631,6 @@
                                     </td>
 
 
-                                    <td
-                                        class="history-explanation-cell"
-                                        title="{{ report.description }}"
-                                    >
-
-                                        {% if report.description %}
-
-                                            {{ report.description }}
-
-                                        {% else %}
-
-                                            No description provided
-
-                                        {% endif %}
-
-                                    </td>
-
-
                                     <td>
 
                                         <span
@@ -350,18 +645,50 @@
                                                 pending
                                             {% endif %}"
                                         >
-
                                             {{ report.status }}
-
                                         </span>
 
                                     </td>
 
 
+                                    <td class="report-details-cell">
+
+                                        <button
+                                            type="button"
+                                            class="view-report-button
+                                            {% if report.status == 'Pending' %}
+                                                pending
+                                            {% endif %}
+                                            open-user-report-modal"
+                                            data-reference="SCAM-{{ report.report_date.year }}-{{ '%04d'|format(report.report_id) }}"
+                                            data-date="{{ report.report_date }}"
+                                            data-type="{{ report.report_type }}"
+                                            data-status="{{ report.status }}"
+                                            data-content="{{ report.reported_content|e }}"
+                                            data-description="{{ (report.description or '')|e }}"
+                                            data-feedback="{{ (report.admin_feedback or '')|e }}"
+                                            data-reviewed-at="{{ report.reviewed_at or '' }}"
+                                            data-notification="{{ report.notification_status or 'Not Sent' }}"
+                                            data-notification-date="{{ report.notification_sent_at or '' }}"
+                                        >
+
+                                            {% if report.status == "Pending" %}
+
+                                                View Report
+
+                                            {% else %}
+
+                                                View Feedback
+
+                                            {% endif %}
+
+                                        </button>
+
+                                    </td>
+
                                 </tr>
 
                             {% endfor %}
-
 
                         </tbody>
 
@@ -398,14 +725,460 @@
 
             {% endif %}
 
-
         </section>
-
 
     </main>
 
 </div>
 
+
+<!-- =====================================================
+     USER REPORT DETAILS MODAL
+====================================================== -->
+
+<div
+    id="userReportModal"
+    class="user-report-modal"
+    hidden
+>
+
+    <div class="user-report-modal-overlay"></div>
+
+
+    <div
+        class="user-report-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="userReportModalTitle"
+    >
+
+        <div class="user-report-dialog-header">
+
+            <div>
+
+                <span class="report-modal-eyebrow">
+                    REPORT DETAILS
+                </span>
+
+                <h2 id="userReportModalTitle">
+                    Scam Report
+                </h2>
+
+                <p id="modalReportReference">
+                    Report reference
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="closeUserReportModal"
+                class="user-report-modal-close"
+                aria-label="Close report details"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div class="user-report-summary-grid">
+
+            <div class="user-report-summary-card">
+
+                <span>
+                    Report Type
+                </span>
+
+                <strong id="modalReportType">
+                    —
+                </strong>
+
+            </div>
+
+
+            <div class="user-report-summary-card">
+
+                <span>
+                    Status
+                </span>
+
+                <strong id="modalReportStatus">
+                    —
+                </strong>
+
+            </div>
+
+
+            <div class="user-report-summary-card">
+
+                <span>
+                    Submitted
+                </span>
+
+                <strong id="modalReportDate">
+                    —
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="user-report-detail-section">
+
+            <span>
+                Reported Content
+            </span>
+
+            <div
+                id="modalReportedContent"
+                class="user-report-content-box"
+            >
+                —
+            </div>
+
+        </div>
+
+
+        <div class="user-report-detail-section">
+
+            <span>
+                Your Description
+            </span>
+
+            <div
+                id="modalReportDescription"
+                class="user-report-description-box"
+            >
+                No description provided
+            </div>
+
+        </div>
+
+
+        <div class="user-report-detail-section">
+
+            <span>
+                Administrator Feedback
+            </span>
+
+            <div
+                id="modalAdminFeedback"
+                class="user-report-feedback-box"
+            >
+                Awaiting administrator review.
+            </div>
+
+        </div>
+
+
+        <div
+            id="modalReviewDateSection"
+            class="user-report-detail-section"
+        >
+
+            <span>
+                Reviewed At
+            </span>
+
+            <div
+                id="modalReviewedAt"
+                class="user-report-description-box"
+            >
+                Not reviewed
+            </div>
+
+        </div>
+
+
+        <div class="user-report-notification">
+
+            <span id="modalNotificationDate">
+                Email notification
+            </span>
+
+            <strong
+                id="modalNotificationStatus"
+                class="notification-result not-sent"
+            >
+                Not Sent
+            </strong>
+
+        </div>
+
+
+        <div class="user-report-modal-actions">
+
+            <button
+                type="button"
+                id="closeReportDetailsButton"
+                class="close-report-details-button"
+            >
+                Close
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const modal =
+            document.getElementById(
+                "userReportModal"
+            );
+
+        const reportReference =
+            document.getElementById(
+                "modalReportReference"
+            );
+
+        const reportType =
+            document.getElementById(
+                "modalReportType"
+            );
+
+        const reportStatus =
+            document.getElementById(
+                "modalReportStatus"
+            );
+
+        const reportDate =
+            document.getElementById(
+                "modalReportDate"
+            );
+
+        const reportedContent =
+            document.getElementById(
+                "modalReportedContent"
+            );
+
+        const reportDescription =
+            document.getElementById(
+                "modalReportDescription"
+            );
+
+        const adminFeedback =
+            document.getElementById(
+                "modalAdminFeedback"
+            );
+
+        const reviewedAt =
+            document.getElementById(
+                "modalReviewedAt"
+            );
+
+        const notificationStatus =
+            document.getElementById(
+                "modalNotificationStatus"
+            );
+
+        const notificationDate =
+            document.getElementById(
+                "modalNotificationDate"
+            );
+
+        const closeButton =
+            document.getElementById(
+                "closeUserReportModal"
+            );
+
+        const closeDetailsButton =
+            document.getElementById(
+                "closeReportDetailsButton"
+            );
+
+        const overlay =
+            modal.querySelector(
+                ".user-report-modal-overlay"
+            );
+
+        const openButtons =
+            document.querySelectorAll(
+                ".open-user-report-modal"
+            );
+
+
+        function openModal(button) {
+
+            reportReference.textContent =
+                button.dataset.reference;
+
+            reportType.textContent =
+                button.dataset.type;
+
+            reportStatus.textContent =
+                button.dataset.status;
+
+            reportDate.textContent =
+                button.dataset.date;
+
+            reportedContent.textContent =
+                button.dataset.content;
+
+            reportDescription.textContent =
+                button.dataset.description
+                || "No description provided";
+
+            reviewedAt.textContent =
+                button.dataset.reviewedAt
+                || "Not reviewed";
+
+            const feedback =
+                button.dataset.feedback;
+
+            if (feedback) {
+
+                adminFeedback.textContent =
+                    feedback;
+
+                adminFeedback.classList.remove(
+                    "pending"
+                );
+
+            } else {
+
+                adminFeedback.textContent =
+                    "Awaiting administrator review.";
+
+                adminFeedback.classList.add(
+                    "pending"
+                );
+
+            }
+
+            const emailStatus =
+                button.dataset.notification
+                || "Not Sent";
+
+            notificationStatus.textContent =
+                emailStatus;
+
+            notificationStatus.className =
+                "notification-result";
+
+            if (emailStatus === "Sent") {
+
+                notificationStatus.classList.add(
+                    "sent"
+                );
+
+            } else if (emailStatus === "Failed") {
+
+                notificationStatus.classList.add(
+                    "failed"
+                );
+
+            } else {
+
+                notificationStatus.classList.add(
+                    "not-sent"
+                );
+
+            }
+
+            if (
+                button.dataset.notificationDate
+            ) {
+
+                notificationDate.textContent =
+                    "Email notification sent "
+                    + button.dataset.notificationDate;
+
+            } else {
+
+                notificationDate.textContent =
+                    "Email notification";
+
+            }
+
+            modal.hidden = false;
+
+            document.body.classList.add(
+                "report-modal-open"
+            );
+
+            closeButton.focus();
+
+        }
+
+
+        function closeModal() {
+
+            modal.hidden = true;
+
+            document.body.classList.remove(
+                "report-modal-open"
+            );
+
+        }
+
+
+        openButtons.forEach(
+            function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        openModal(
+                            button
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+        closeButton.addEventListener(
+            "click",
+            closeModal
+        );
+
+
+        closeDetailsButton.addEventListener(
+            "click",
+            closeModal
+        );
+
+
+        overlay.addEventListener(
+            "click",
+            closeModal
+        );
+
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Escape"
+                    && !modal.hidden
+                ) {
+
+                    closeModal();
+
+                }
+
+            }
+        );
+
+    }
+);
+
+</script>
 
 </body>
 

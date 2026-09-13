@@ -9,7 +9,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>OCR Scanner | PhishAI</title>
+    <title>OCR Threat Scanner | PhishAI</title>
 
     <link
         rel="stylesheet"
@@ -17,24 +17,56 @@
     >
 
     <style>
-        .ocr-page-grid {
+        .ocr-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+            grid-template-columns: minmax(0, 1.2fr) minmax(330px, 0.8fr);
             gap: 24px;
             align-items: start;
         }
 
         .ocr-card {
-            background: white;
-            border-radius: 16px;
             padding: 28px;
+            border-radius: 16px;
+            background: white;
             box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .input-mode-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 22px 0;
+        }
+
+        .mode-button {
+            padding: 12px;
+            border: 1px solid #94a3b8;
+            border-radius: 10px;
+            background: white;
+            color: #334155;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .mode-button.active {
+            border-color: #2563eb;
+            background: #2563eb;
+            color: white;
+        }
+
+        .content-select {
+            width: 100%;
+            margin: 8px 0 18px;
+            padding: 12px;
+            border: 1px solid #94a3b8;
+            border-radius: 10px;
+            background: white;
+            font: inherit;
         }
 
         .upload-area {
             display: block;
-            margin-top: 22px;
-            padding: 35px 20px;
+            padding: 32px 20px;
             border: 2px dashed #94a3b8;
             border-radius: 14px;
             background: #f8fafc;
@@ -54,7 +86,6 @@
         .upload-title {
             display: block;
             margin-bottom: 8px;
-            color: #0f172a;
             font-size: 18px;
             font-weight: 700;
         }
@@ -65,19 +96,67 @@
         }
 
         .selected-file {
-            margin-top: 14px;
+            margin-top: 12px;
             color: #1d4ed8;
-            font-weight: 600;
+            font-weight: 700;
         }
 
+        .camera-panel {
+            display: none;
+        }
+
+        .camera-select {
+            width: 100%;
+            margin-bottom: 14px;
+            padding: 12px;
+            border: 1px solid #94a3b8;
+            border-radius: 10px;
+            background: white;
+            font: inherit;
+        }
+
+        .camera-view,
         .image-preview {
             display: none;
             width: 100%;
-            max-height: 350px;
-            margin-top: 20px;
+            max-height: 390px;
+            margin-top: 18px;
             border-radius: 12px;
-            object-fit: contain;
             background: #0f172a;
+            object-fit: contain;
+        }
+
+        .camera-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .secondary-button,
+        .danger-button {
+            flex: 1;
+            min-width: 130px;
+            padding: 11px 14px;
+            border: none;
+            border-radius: 9px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .secondary-button {
+            background: #475569;
+        }
+
+        .danger-button {
+            background: #dc2626;
+        }
+
+        .secondary-button:disabled,
+        .danger-button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
         }
 
         .ocr-button {
@@ -97,13 +176,24 @@
             background: #1d4ed8;
         }
 
-        .ocr-error {
-            margin-bottom: 20px;
+        .ocr-button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .ocr-error,
+        .camera-error {
+            margin-bottom: 18px;
             padding: 14px 16px;
             border: 1px solid #fecaca;
             border-radius: 10px;
             background: #fef2f2;
             color: #b91c1c;
+        }
+
+        .camera-error {
+            display: none;
+            margin-top: 14px;
         }
 
         .ocr-confidence {
@@ -116,6 +206,16 @@
             font-weight: 700;
         }
 
+        .ocr-type {
+            display: inline-block;
+            margin: 10px 8px 18px 0;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: #ede9fe;
+            color: #5b21b6;
+            font-weight: 700;
+        }
+
         .ocr-text {
             width: 100%;
             min-height: 130px;
@@ -124,16 +224,6 @@
             border: 1px solid #cbd5e1;
             border-radius: 10px;
             resize: vertical;
-            font: inherit;
-        }
-
-        .confirmed-url {
-            width: 100%;
-            box-sizing: border-box;
-            margin-top: 8px;
-            padding: 13px 14px;
-            border: 1px solid #94a3b8;
-            border-radius: 10px;
             font: inherit;
         }
 
@@ -154,7 +244,7 @@
         }
 
         @media (max-width: 900px) {
-            .ocr-page-grid {
+            .ocr-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -183,6 +273,10 @@
             </a>
 
             <a href="/history">Detection History</a>
+            <a href="/model-performance">
+                📈 Model Performance
+            </a>
+
             <a href="/awareness">Awareness Centre</a>
             <a href="/report-scam">Report Scam</a>
             <a href="/scam-reports">Reported Scams</a>
@@ -215,11 +309,11 @@
 
         <header class="topbar">
 
-            <h1>OCR URL Scanner</h1>
+            <h1>OCR Threat Scanner</h1>
 
             <span>
-                Extract a URL from an image and analyse it
-                using the URL phishing-detection model.
+                Capture or upload an SMS, email or URL
+                and analyse it for phishing threats.
             </span>
 
         </header>
@@ -232,61 +326,195 @@
 
         {% endif %}
 
-        <section class="ocr-page-grid">
+        <section class="ocr-grid">
 
             <div class="ocr-card">
 
-                <h2>Upload URL Image</h2>
+                <h2 id="capture-heading">
+                    Capture Threat Content
+                </h2>
 
-                <p>
-                    Upload a screenshot or photograph containing
-                    a visible website URL.
+                <p id="capture-description">
+                    Select the content type, then upload an image
+                    or capture it using a connected webcam.
                 </p>
 
                 <form
+                    id="ocr-form"
                     method="POST"
                     enctype="multipart/form-data"
                 >
 
                     <label
-                        for="image"
-                        class="upload-area"
+                        for="content-type"
+                        class="result-label"
                     >
+                        Select content type
+                    </label>
 
-                        <span class="upload-title">
-                            Select an image
-                        </span>
+                    <select
+                        id="content-type"
+                        name="content_type"
+                        class="content-select"
+                        required
+                    >
+                        <option
+                            value="url"
+                            {% if selected_content_type == "url" %}
+                                selected
+                            {% endif %}
+                        >
+                            Website URL
+                        </option>
 
-                        <span class="upload-description">
-                            PNG, JPEG, WEBP or BMP — maximum 10 MB
-                        </span>
+                        <option
+                            value="sms"
+                            {% if selected_content_type == "sms" %}
+                                selected
+                            {% endif %}
+                        >
+                            SMS Message
+                        </option>
 
-                        <input
-                            type="file"
-                            id="image"
-                            name="image"
-                            accept="image/png,image/jpeg,image/webp,image/bmp"
-                            required
+                        <option
+                            value="email"
+                            {% if selected_content_type == "email" %}
+                                selected
+                            {% endif %}
+                        >
+                            Email
+                        </option>
+                    </select>
+
+                    <div class="input-mode-buttons">
+
+                        <button
+                            type="button"
+                            id="upload-mode-button"
+                            class="mode-button active"
+                        >
+                            Upload Image
+                        </button>
+
+                        <button
+                            type="button"
+                            id="camera-mode-button"
+                            class="mode-button"
+                        >
+                            Use Webcam
+                        </button>
+
+                    </div>
+
+                    <div id="upload-panel">
+
+                        <label
+                            for="image"
+                            class="upload-area"
                         >
 
+                            <span class="upload-title">
+                                Select an image
+                            </span>
+
+                            <span class="upload-description">
+                                PNG, JPEG, WEBP or BMP — maximum 10 MB
+                            </span>
+
+                            <input
+                                type="file"
+                                id="image"
+                                name="image"
+                                accept="image/png,image/jpeg,image/webp,image/bmp"
+                                required
+                            >
+
+                            <span
+                                id="selected-file"
+                                class="selected-file"
+                            ></span>
+
+                        </label>
+
+                    </div>
+
+                    <div
+                        id="camera-panel"
+                        class="camera-panel"
+                    >
+
+                        <select
+                            id="camera-select"
+                            class="camera-select"
+                        >
+                            <option value="">
+                                Default camera
+                            </option>
+                        </select>
+
+                        <video
+                            id="camera-view"
+                            class="camera-view"
+                            autoplay
+                            playsinline
+                            muted
+                        ></video>
+
+                        <canvas
+                            id="camera-canvas"
+                            hidden
+                        ></canvas>
+
+                        <div class="camera-controls">
+
+                            <button
+                                type="button"
+                                id="start-camera-button"
+                                class="secondary-button"
+                            >
+                                Start Camera
+                            </button>
+
+                            <button
+                                type="button"
+                                id="capture-button"
+                                class="secondary-button"
+                                disabled
+                            >
+                                Capture Image
+                            </button>
+
+                            <button
+                                type="button"
+                                id="stop-camera-button"
+                                class="danger-button"
+                                disabled
+                            >
+                                Stop Camera
+                            </button>
+
+                        </div>
+
                         <div
-                            id="selected-file"
-                            class="selected-file"
+                            id="camera-error"
+                            class="camera-error"
                         ></div>
 
-                    </label>
+                    </div>
 
                     <img
                         id="image-preview"
                         class="image-preview"
-                        alt="Selected image preview"
+                        alt="Selected or captured image"
                     >
 
                     <button
                         type="submit"
+                        id="extract-button"
                         class="ocr-button"
+                        disabled
                     >
-                        Extract URL
+                        Extract Content
                     </button>
 
                 </form>
@@ -306,54 +534,56 @@
                         </strong>
                     </p>
 
+                    <div class="ocr-type">
+                        {{ ocr_result.content_type|upper }}
+                    </div>
+
                     <div class="ocr-confidence">
                         OCR confidence:
                         {{ ocr_result.ocr_confidence }}%
                     </div>
 
                     <label
-                        for="extracted_text"
+                        for="extracted-text"
                         class="result-label"
                     >
                         Complete extracted text
                     </label>
 
                     <textarea
-                        id="extracted_text"
+                        id="extracted-text"
                         class="ocr-text"
                         readonly
                     >{{ ocr_result.extracted_text }}</textarea>
 
                     <form
                         method="POST"
-                        action="{{ url_for('url_scanner') }}"
+                        action="{{ url_for(ocr_result.analysis_route) }}"
                     >
 
                         <label
-                            for="submitted_content"
+                            for="submitted-content"
                             class="result-label"
                         >
-                            Confirm or correct the URL
+                            Confirm or correct the
+                            {{ ocr_result.content_label }}
                         </label>
 
-                        <input
-                            type="text"
-                            id="submitted_content"
+                        <textarea
+                            id="submitted-content"
                             name="submitted_content"
-                            class="confirmed-url"
-                            value="{{ ocr_result.detected_url }}"
-                            placeholder="https://www.example.com"
-                            maxlength="2048"
-                            autocomplete="off"
-                            spellcheck="false"
+                            class="ocr-text"
+                            maxlength="10000"
                             required
-                        >
+                        >{{ ocr_result.detected_content }}</textarea>
 
                         <button
                             type="submit"
                             class="ocr-button"
                         >
-                            Analyse with URL Model
+                            Analyse with
+                            {{ ocr_result.content_type|upper }}
+                            Model
                         </button>
 
                     </form>
@@ -361,10 +591,10 @@
                 {% else %}
 
                     <div class="ocr-note">
-                        After uploading an image, the extracted
-                        text and OCR confidence will appear here.
-                        You will be able to correct the URL before
-                        submitting it to the detection model.
+                        The extracted content and OCR confidence
+                        will appear here. You can correct the text
+                        before submitting it to the appropriate
+                        detection model.
                     </div>
 
                 {% endif %}
@@ -378,31 +608,411 @@
 </div>
 
 <script>
-    const imageInput = document.getElementById("image");
-    const preview = document.getElementById("image-preview");
-    const selectedFile = document.getElementById("selected-file");
+    const contentType =
+        document.getElementById("content-type");
 
-    imageInput.addEventListener("change", function () {
-        const file = this.files[0];
+    const uploadModeButton =
+        document.getElementById("upload-mode-button");
 
-        if (!file) {
-            preview.style.display = "none";
-            preview.removeAttribute("src");
-            selectedFile.textContent = "";
+    const cameraModeButton =
+        document.getElementById("camera-mode-button");
+
+    const uploadPanel =
+        document.getElementById("upload-panel");
+
+    const cameraPanel =
+        document.getElementById("camera-panel");
+
+    const imageInput =
+        document.getElementById("image");
+
+    const selectedFile =
+        document.getElementById("selected-file");
+
+    const imagePreview =
+        document.getElementById("image-preview");
+
+    const cameraSelect =
+        document.getElementById("camera-select");
+
+    const cameraView =
+        document.getElementById("camera-view");
+
+    const cameraCanvas =
+        document.getElementById("camera-canvas");
+
+    const startCameraButton =
+        document.getElementById("start-camera-button");
+
+    const captureButton =
+        document.getElementById("capture-button");
+
+    const stopCameraButton =
+        document.getElementById("stop-camera-button");
+
+    const extractButton =
+        document.getElementById("extract-button");
+
+    const cameraError =
+        document.getElementById("camera-error");
+
+    let cameraStream = null;
+
+
+    function getContentLabel() {
+        const labels = {
+            url: "URL",
+            sms: "SMS",
+            email: "Email"
+        };
+
+        return labels[contentType.value] || "Content";
+    }
+
+
+    function updatePageText() {
+        const label = getContentLabel();
+
+        document.getElementById(
+            "capture-heading"
+        ).textContent = `Capture ${label} Content`;
+
+        extractButton.textContent =
+            `Extract ${label}`;
+    }
+
+
+    function displayError(message) {
+        cameraError.textContent = message;
+        cameraError.style.display = "block";
+    }
+
+
+    function clearError() {
+        cameraError.textContent = "";
+        cameraError.style.display = "none";
+    }
+
+
+    function stopCamera() {
+        if (cameraStream) {
+            cameraStream
+                .getTracks()
+                .forEach(track => track.stop());
+        }
+
+        cameraStream = null;
+        cameraView.srcObject = null;
+        cameraView.style.display = "none";
+
+        captureButton.disabled = true;
+        stopCameraButton.disabled = true;
+        startCameraButton.disabled = false;
+    }
+
+
+    function showUploadMode() {
+        stopCamera();
+
+        uploadPanel.style.display = "block";
+        cameraPanel.style.display = "none";
+
+        uploadModeButton.classList.add("active");
+        cameraModeButton.classList.remove("active");
+    }
+
+
+    function showCameraMode() {
+        uploadPanel.style.display = "none";
+        cameraPanel.style.display = "block";
+
+        cameraModeButton.classList.add("active");
+        uploadModeButton.classList.remove("active");
+
+        loadCameraDevices();
+    }
+
+
+    async function loadCameraDevices() {
+        clearError();
+
+        if (
+            !navigator.mediaDevices
+            || !navigator.mediaDevices.enumerateDevices
+        ) {
+            displayError(
+                "This browser does not support camera access."
+            );
+
             return;
         }
 
-        selectedFile.textContent = file.name;
+        try {
+            const currentDevice =
+                cameraSelect.value;
 
-        const reader = new FileReader();
+            const devices =
+                await navigator.mediaDevices.enumerateDevices();
 
-        reader.addEventListener("load", function () {
-            preview.src = reader.result;
-            preview.style.display = "block";
-        });
+            const videoDevices =
+                devices.filter(
+                    device => device.kind === "videoinput"
+                );
 
-        reader.readAsDataURL(file);
-    });
+            cameraSelect.innerHTML =
+                '<option value="">Default camera</option>';
+
+            videoDevices.forEach((device, index) => {
+                const option =
+                    document.createElement("option");
+
+                option.value =
+                    device.deviceId;
+
+                option.textContent =
+                    device.label
+                    || `Camera ${index + 1}`;
+
+                if (device.deviceId === currentDevice) {
+                    option.selected = true;
+                }
+
+                cameraSelect.appendChild(option);
+            });
+
+        } catch (error) {
+            displayError(
+                "The available cameras could not be loaded."
+            );
+        }
+    }
+
+
+    async function startCamera() {
+        clearError();
+        stopCamera();
+
+        try {
+            const selectedDevice =
+                cameraSelect.value;
+
+            const videoConstraints =
+                selectedDevice
+                    ? {
+                        deviceId: {
+                            exact: selectedDevice
+                        },
+                        width: {
+                            ideal: 1920
+                        },
+                        height: {
+                            ideal: 1080
+                        }
+                    }
+                    : {
+                        width: {
+                            ideal: 1920
+                        },
+                        height: {
+                            ideal: 1080
+                        }
+                    };
+
+            cameraStream =
+                await navigator.mediaDevices.getUserMedia({
+                    video: videoConstraints,
+                    audio: false
+                });
+
+            cameraView.srcObject =
+                cameraStream;
+
+            await cameraView.play();
+
+            cameraView.style.display =
+                "block";
+
+            captureButton.disabled =
+                false;
+
+            stopCameraButton.disabled =
+                false;
+
+            startCameraButton.disabled =
+                true;
+
+            await loadCameraDevices();
+
+        } catch (error) {
+            displayError(
+                "Camera access failed. Check your browser "
+                + "permission and confirm that the webcam "
+                + "is connected."
+            );
+        }
+    }
+
+
+    function captureImage() {
+        if (
+            !cameraStream
+            || !cameraView.videoWidth
+            || !cameraView.videoHeight
+        ) {
+            displayError(
+                "Start the camera before capturing an image."
+            );
+
+            return;
+        }
+
+        cameraCanvas.width =
+            cameraView.videoWidth;
+
+        cameraCanvas.height =
+            cameraView.videoHeight;
+
+        const context =
+            cameraCanvas.getContext("2d");
+
+        context.drawImage(
+            cameraView,
+            0,
+            0,
+            cameraCanvas.width,
+            cameraCanvas.height
+        );
+
+        cameraCanvas.toBlob(
+            function (blob) {
+                if (!blob) {
+                    displayError(
+                        "The camera image could not be captured."
+                    );
+
+                    return;
+                }
+
+                const selectedType =
+                    contentType.value;
+
+                const capturedFile =
+                    new File(
+                        [blob],
+                        `webcam_${selectedType}_capture.png`,
+                        {
+                            type: "image/png"
+                        }
+                    );
+
+                const transfer =
+                    new DataTransfer();
+
+                transfer.items.add(
+                    capturedFile
+                );
+
+                imageInput.files =
+                    transfer.files;
+
+                imagePreview.src =
+                    URL.createObjectURL(blob);
+
+                imagePreview.style.display =
+                    "block";
+
+                selectedFile.textContent =
+                    `${getContentLabel()} image captured`;
+
+                extractButton.disabled =
+                    false;
+
+                stopCamera();
+            },
+            "image/png"
+        );
+    }
+
+
+    imageInput.addEventListener(
+        "change",
+        function () {
+            const file =
+                this.files[0];
+
+            if (!file) {
+                selectedFile.textContent =
+                    "";
+
+                imagePreview.style.display =
+                    "none";
+
+                extractButton.disabled =
+                    true;
+
+                return;
+            }
+
+            selectedFile.textContent =
+                file.name;
+
+            imagePreview.src =
+                URL.createObjectURL(file);
+
+            imagePreview.style.display =
+                "block";
+
+            extractButton.disabled =
+                false;
+        }
+    );
+
+
+    contentType.addEventListener(
+        "change",
+        updatePageText
+    );
+
+    uploadModeButton.addEventListener(
+        "click",
+        showUploadMode
+    );
+
+    cameraModeButton.addEventListener(
+        "click",
+        showCameraMode
+    );
+
+    startCameraButton.addEventListener(
+        "click",
+        startCamera
+    );
+
+    captureButton.addEventListener(
+        "click",
+        captureImage
+    );
+
+    stopCameraButton.addEventListener(
+        "click",
+        stopCamera
+    );
+
+    cameraSelect.addEventListener(
+        "change",
+        function () {
+            if (cameraStream) {
+                startCamera();
+            }
+        }
+    );
+
+    window.addEventListener(
+        "beforeunload",
+        stopCamera
+    );
+
+    updatePageText();
 </script>
 
 </body>

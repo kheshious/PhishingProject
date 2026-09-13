@@ -23,6 +23,19 @@ vectorizer = joblib.load(VECTORIZER_PATH)
 feature_scaler = joblib.load(SCALER_PATH)
 
 
+def calculate_url_risk(
+    malicious_probability: float
+) -> str:
+
+    if malicious_probability >= 70:
+        return "High"
+
+    if malicious_probability >= 40:
+        return "Medium"
+
+    return "Low"
+
+
 def normalise_url(value):
 
     if not isinstance(value, str):
@@ -38,12 +51,15 @@ def normalise_url(value):
     parsing_value = value
 
     if "://" not in parsing_value:
-        parsing_value = "http://" + parsing_value
+        parsing_value = (
+            "http://" + parsing_value
+        )
 
     try:
         parsed = urlsplit(
             parsing_value
         )
+
     except ValueError:
         return ""
 
@@ -59,6 +75,7 @@ def normalise_url(value):
 
     try:
         port = parsed.port
+
     except ValueError:
         port = None
 
@@ -100,6 +117,7 @@ def get_hostname(url):
         parsed = urlsplit(
             "http://" + normalised
         )
+
     except ValueError:
         return ""
 
@@ -275,9 +293,8 @@ def get_warnings(url):
     return warnings
 
 
-def build_explanation(
-    predicted_class,
-    confidence,
+def build_recommendations(
+    predicted_class
 ):
 
     if predicted_class == 1:
@@ -290,25 +307,36 @@ def build_explanation(
         ]
 
         recommended_actions = [
-            "Do not enter passwords, banking details or personal information.",
+            (
+                "Do not enter passwords, banking details "
+                "or personal information."
+            ),
             "Avoid downloading files from the website.",
-            "Do not continue using the link unless you can verify it.",
-            "Report the URL if you believe it is fraudulent or harmful.",
+            (
+                "Do not continue using the link unless "
+                "you can verify it."
+            ),
+            (
+                "Report the URL if you believe it is "
+                "fraudulent or harmful."
+            ),
         ]
 
     else:
 
         reasons = [
             (
-                "The trained machine-learning model did not detect "
-                "strong patterns associated with malicious URLs."
+                "The trained machine-learning model did not "
+                "detect strong patterns associated with "
+                "malicious URLs."
             )
         ]
 
         recommended_actions = [
             (
                 "No immediate action is required, but verify "
-                "unexpected websites before entering sensitive information."
+                "unexpected websites before entering sensitive "
+                "information."
             )
         ]
 
@@ -357,6 +385,7 @@ def predict_url(url):
             "validation_error": validation_error,
             "prediction": "Invalid URL",
             "risk_level": "None",
+            "risk_score": 0,
             "decision_source": "Input Validation",
             "model_prediction": "N/A",
             "model_display_prediction": "N/A",
@@ -396,56 +425,42 @@ def predict_url(url):
         model_input
     )[0]
 
-    classes = list(
+    model_classes = list(
         model.classes_
     )
 
-    legitimate_index = (
-        classes.index(0)
-    )
+    legitimate_index = model_classes.index(0)
+    malicious_index = model_classes.index(1)
 
-    malicious_index = (
-        classes.index(1)
+    predicted_index = model_classes.index(
+        predicted_class
     )
 
     legitimate_probability = float(
-        probabilities[
-            legitimate_index
-        ] * 100
+        probabilities[legitimate_index] * 100
     )
 
     malicious_probability = float(
-        probabilities[
-            malicious_index
-        ] * 100
-    )
-
-    predicted_index = (
-        classes.index(
-            predicted_class
-        )
+        probabilities[malicious_index] * 100
     )
 
     confidence = float(
-        probabilities[
-            predicted_index
-        ] * 100
+        probabilities[predicted_index] * 100
+    )
+
+    risk_level = calculate_url_risk(
+        malicious_probability
     )
 
     if predicted_class == 1:
-
         prediction = "Malicious"
-        risk_level = "High"
 
     else:
-
         prediction = "Legitimate"
-        risk_level = "Low"
 
     reasons, recommended_actions = (
-        build_explanation(
-            predicted_class,
-            confidence,
+        build_recommendations(
+            predicted_class
         )
     )
 
@@ -461,36 +476,33 @@ def predict_url(url):
     return {
         "is_valid": True,
         "validation_error": None,
-
         "prediction": prediction,
         "risk_level": risk_level,
-        "decision_source": (
-            "Machine Learning Model"
+        "risk_score": round(
+            malicious_probability,
+            2
         ),
-
+        "decision_source": (
+            "Machine-Learning Model"
+        ),
         "model_prediction": predicted_class,
         "model_display_prediction": prediction,
-
         "model_confidence": round(
             confidence,
             2
         ),
-
         "confidence": round(
             confidence,
             2
         ),
-
         "legitimate_probability": round(
             legitimate_probability,
             2
         ),
-
         "malicious_probability": round(
             malicious_probability,
             2
         ),
-
         "class_probabilities": {
             "legitimate": round(
                 legitimate_probability,
@@ -501,22 +513,16 @@ def predict_url(url):
                 2
             ),
         },
-
         "reasons": reasons,
         "warnings": warnings,
-
         "recommended_actions": (
             recommended_actions
         ),
-
         "url_segments": url_segments,
-
         "hostname": get_hostname(
             url
         ),
-
         "normalised_url": normalised,
-
         "detected_brands": [],
         "impersonated_brands": [],
     }
@@ -548,9 +554,7 @@ if __name__ == "__main__":
             url
         )
 
-        print(
-            "\n" + "=" * 70
-        )
+        print("\n" + "=" * 70)
 
         print(
             "Submitted URL:",
@@ -582,13 +586,18 @@ if __name__ == "__main__":
         )
 
         print(
-            "Risk:",
-            result["risk_level"]
+            "Model confidence:",
+            f'{result["confidence"]}%'
         )
 
         print(
-            "Confidence:",
-            f'{result["confidence"]}%'
+            "Malicious risk score:",
+            f'{result["risk_score"]}%'
+        )
+
+        print(
+            "Risk level:",
+            result["risk_level"]
         )
 
         print(
@@ -600,18 +609,3 @@ if __name__ == "__main__":
             "Malicious probability:",
             f'{result["malicious_probability"]}%'
         )
-
-        if result["warnings"]:
-
-            print(
-                "Warnings:"
-            )
-
-            for warning in result[
-                "warnings"
-            ]:
-
-                print(
-                    "-",
-                    warning
-                )
