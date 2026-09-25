@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -9,21 +10,28 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>URL Scanner | PhishAI</title>
+    <title>
+        URL Scanner | PhishAI
+    </title>
 
     <link
         rel="stylesheet"
         href="{{ url_for('static', filename='style.css') }}"
     >
+
 </head>
+
 
 <body>
 
 <div class="layout">
 
+
     <aside class="sidebar">
 
-        <h2>🛡️ PhishAI</h2>
+        <h2>
+            🛡️ PhishAI
+        </h2>
 
         <nav>
 
@@ -70,13 +78,25 @@
                 📋 Reported Scams
             </a>
 
+            {% if session.role|lower == "admin" %}
+
+                <a href="/admin/scam-reports">
+                    🛡️ Admin Review
+                </a>
+
+            {% endif %}
+
         </nav>
+
 
         <div class="sidebar-user">
 
             <div class="user-avatar">
+
                 {{ session.first_name[0]|upper }}
+
             </div>
+
 
             <div class="user-details">
 
@@ -90,6 +110,7 @@
 
             </div>
 
+
             <a
                 href="/logout"
                 class="logout-button"
@@ -102,7 +123,10 @@
 
     </aside>
 
+
+
     <main class="main-content">
+
 
         <header class="topbar">
 
@@ -117,7 +141,10 @@
 
         </header>
 
+
+
         <section class="scanner-grid">
+
 
             <div class="scan-card url-scan-card">
 
@@ -127,9 +154,10 @@
 
                 <p>
                     PhishAI will analyse the URL and show its
-                    prediction, model confidence, malicious risk
-                    score and recommended safety actions.
+                    prediction, malicious probability, legitimate
+                    probability and recommended safety actions.
                 </p>
+
 
                 <form
                     method="POST"
@@ -157,6 +185,7 @@
 
                     </div>
 
+
                     <div class="form-footer url-form-footer">
 
                         <small>
@@ -177,6 +206,8 @@
 
             </div>
 
+
+
             <div class="scan-help">
 
                 <div class="ai-graphic small">
@@ -190,6 +221,7 @@
                     </p>
 
                 </div>
+
 
                 <h3>
                     Common warning signs
@@ -221,11 +253,16 @@
 
             </div>
 
+
         </section>
+
+
 
         {% if result %}
 
+
             {% if result.prediction == "Invalid URL" %}
+
 
                 <section
                     class="result-panel"
@@ -244,6 +281,7 @@
 
                     </div>
 
+
                     <div class="analysis-box invalid-url-box">
 
                         <h3>
@@ -259,21 +297,34 @@
                         </h3>
 
                         <ul>
-                            <li>www.google.com</li>
-                            <li>https://www.github.com</li>
-                            <li>microsoft.com</li>
+
+                            <li>
+                                www.google.com
+                            </li>
+
+                            <li>
+                                https://www.github.com
+                            </li>
+
+                            <li>
+                                microsoft.com
+                            </li>
+
                         </ul>
 
                     </div>
 
                 </section>
 
+
             {% else %}
+
 
                 <section
                     class="result-panel"
                     id="detection-result"
                 >
+
 
                     <div class="result-header">
 
@@ -289,7 +340,10 @@
 
                     </div>
 
+
+
                     <div class="result-cards">
+
 
                         <div class="mini-card">
 
@@ -303,33 +357,41 @@
 
                         </div>
 
-                        <div class="mini-card">
 
-                            <h3>
-                                Model Confidence
-                            </h3>
-
-                            <p>
-                                {{ result.model_confidence }}%
-                            </p>
-
-                        </div>
 
                         <div class="mini-card">
 
                             <h3>
-                                Malicious Risk Score
+                                Malicious Probability
                             </h3>
 
                             <p>
-                                {{ result.risk_score }}%
+                                {{ result.malicious_probability }}%
                             </p>
 
                         </div>
+
+
+
+                        <div class="mini-card">
+
+                            <h3>
+                                Legitimate Probability
+                            </h3>
+
+                            <p>
+                                {{ result.legitimate_probability }}%
+                            </p>
+
+                        </div>
+
 
                     </div>
 
+
+
                     <div class="risk-meter-container">
+
 
                         <div class="risk-meter-header">
 
@@ -338,10 +400,11 @@
                             </h3>
 
                             <span>
-                                {{ result.risk_score }}%
+                                {{ result.malicious_probability }}%
                             </span>
 
                         </div>
+
 
                         <div class="risk-bar">
 
@@ -354,11 +417,12 @@
                                 {% else %}
                                     low
                                 {% endif %}"
-                                style="width: {{ result.risk_score }}%;"
+                                style="width: {{ result.malicious_probability }}%;"
                             >
                             </div>
 
                         </div>
+
 
                         <small>
                             Low: below 40% |
@@ -366,39 +430,16 @@
                             High: 70% and above
                         </small>
 
-                    </div>
-
-                    <div class="probability-grid">
-
-                        <div class="probability-card">
-
-                            <span>
-                                Legitimate Probability
-                            </span>
-
-                            <strong>
-                                {{ result.legitimate_probability }}%
-                            </strong>
-
-                        </div>
-
-                        <div class="probability-card">
-
-                            <span>
-                                Malicious Probability
-                            </span>
-
-                            <strong>
-                                {{ result.malicious_probability }}%
-                            </strong>
-
-                        </div>
 
                     </div>
+
+
 
                     {% if result.url_segments %}
 
+
                         <div class="url-analysis-section">
+
 
                             <div class="url-analysis-heading">
 
@@ -412,6 +453,7 @@
                                 </p>
 
                             </div>
+
 
                             <div
                                 class="url-visual-analysis
@@ -439,17 +481,23 @@
 
                             </div>
 
+
                         </div>
+
 
                     {% endif %}
 
+
+
                     <div class="insight-grid">
+
 
                         <div class="analysis-box">
 
                             <h3>
                                 ✅ Recommended Actions
                             </h3>
+
 
                             {% if result.actions %}
 
@@ -476,6 +524,8 @@
 
                         </div>
 
+
+
                         {% if result.warnings %}
 
                             <div class="analysis-box security-warning-box">
@@ -500,11 +550,16 @@
 
                         {% endif %}
 
+
                     </div>
+
+
 
                     {% if result.recommended_modules %}
 
+
                         <section class="smart-learning-section">
+
 
                             <div class="smart-learning-heading">
 
@@ -524,9 +579,12 @@
 
                             </div>
 
+
                             <div class="smart-learning-grid">
 
+
                                 {% for module in result.recommended_modules %}
+
 
                                     <article
                                         class="smart-learning-card
@@ -535,11 +593,13 @@
                                         {% endif %}"
                                     >
 
+
                                         <div class="smart-learning-card-top">
 
                                             <div class="smart-learning-module-icon">
                                                 {{ module.icon }}
                                             </div>
+
 
                                             {% if loop.first %}
 
@@ -556,6 +616,7 @@
                                             {% endif %}
 
                                         </div>
+
 
                                         <span class="smart-learning-category">
                                             {{ module.category }}
@@ -579,21 +640,29 @@
                                             Start Learning →
                                         </a>
 
+
                                     </article>
+
 
                                 {% endfor %}
 
+
                             </div>
+
 
                         </section>
 
+
                     {% elif result.recommended_module %}
 
+
                         <section class="scanner-learning-recommendation">
+
 
                             <div class="scanner-learning-icon">
                                 {{ result.recommended_module.icon }}
                             </div>
+
 
                             <div class="scanner-learning-content">
 
@@ -612,6 +681,7 @@
 
                             </div>
 
+
                             <a
                                 href="{{ url_for(
                                     'learning_module',
@@ -622,11 +692,16 @@
                                 Start Learning →
                             </a>
 
+
                         </section>
+
 
                     {% endif %}
 
+
+
                     {% if result.prediction == "Malicious" %}
+
 
                         <form
                             method="POST"
@@ -661,19 +736,28 @@
 
                         </form>
 
+
                     {% endif %}
+
 
                 </section>
 
+
             {% endif %}
+
 
         {% endif %}
 
+
     </main>
+
 
 </div>
 
+
+
 {% if result %}
+
 
 <script>
 
@@ -700,7 +784,9 @@ document.addEventListener(
 
 </script>
 
+
 {% endif %}
+
 
 </body>
 

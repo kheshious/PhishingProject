@@ -127,8 +127,9 @@
 
                 <p>
                     PhishAI will analyse the message and show
-                    its prediction, model confidence, smishing
-                    risk score and recommended safety actions.
+                    its prediction, smishing probability,
+                    legitimate probability, risk level and
+                    recommended safety actions.
                 </p>
 
                 <form method="POST">
@@ -250,11 +251,11 @@
                 <div class="mini-card">
 
                     <h3>
-                        Model Confidence
+                        Smishing Probability
                     </h3>
 
                     <p>
-                        {{ result.confidence }}%
+                        {{ result.risk_score|round(2) }}%
                     </p>
 
                 </div>
@@ -262,11 +263,11 @@
                 <div class="mini-card">
 
                     <h3>
-                        Smishing Risk Score
+                        Legitimate Probability
                     </h3>
 
                     <p>
-                        {{ result.risk_score }}%
+                        {{ (100 - result.risk_score)|round(2) }}%
                     </p>
 
                 </div>
@@ -282,7 +283,7 @@
                     </h3>
 
                     <span>
-                        {{ result.risk_score }}%
+                        {{ result.risk_score|round(2) }}%
                     </span>
 
                 </div>
@@ -320,17 +321,28 @@
                         ⚠️ Recommended Actions
                     </h3>
 
-                    <ul>
+                    {% if result.actions %}
 
-                        {% for action in result.actions %}
+                        <ul>
 
-                            <li>
-                                {{ action }}
-                            </li>
+                            {% for action in result.actions %}
 
-                        {% endfor %}
+                                <li>
+                                    {{ action }}
+                                </li>
 
-                    </ul>
+                            {% endfor %}
+
+                        </ul>
+
+                    {% else %}
+
+                        <p>
+                            Continue to follow normal SMS
+                            security precautions.
+                        </p>
+
+                    {% endif %}
 
                 </div>
 
@@ -377,13 +389,17 @@
 
                                     {% if loop.first %}
 
-                                        <span class="primary-recommendation-badge">
+                                        <span
+                                            class="primary-recommendation-badge"
+                                        >
                                             PRIMARY
                                         </span>
 
                                     {% else %}
 
-                                        <span class="secondary-recommendation-badge">
+                                        <span
+                                            class="secondary-recommendation-badge"
+                                        >
                                             RELATED
                                         </span>
 

@@ -125,9 +125,9 @@
                 </h2>
 
                 <p>
-                    PhishAI will analyse the email and show
-                    its prediction, model confidence, phishing
-                    risk score and recommended safety actions.
+                    PhishAI will analyse the email and show its
+                    prediction, phishing probability, legitimate
+                    probability, risk level and recommended actions.
                 </p>
 
                 <form method="POST">
@@ -249,11 +249,11 @@
                 <div class="mini-card">
 
                     <h3>
-                        Model Confidence
+                        Phishing Probability
                     </h3>
 
                     <p>
-                        {{ result.confidence }}%
+                        {{ result.phishing_probability }}%
                     </p>
 
                 </div>
@@ -261,11 +261,11 @@
                 <div class="mini-card">
 
                     <h3>
-                        Phishing Risk Score
+                        Legitimate Probability
                     </h3>
 
                     <p>
-                        {{ result.risk_score }}%
+                        {{ result.legitimate_probability }}%
                     </p>
 
                 </div>
@@ -281,7 +281,7 @@
                     </h3>
 
                     <span>
-                        {{ result.risk_score }}%
+                        {{ result.phishing_probability }}%
                     </span>
 
                 </div>
@@ -297,7 +297,7 @@
                         {% else %}
                             low
                         {% endif %}"
-                        style="width: {{ result.risk_score }}%;"
+                        style="width: {{ result.phishing_probability }}%;"
                     >
                     </div>
 
@@ -316,7 +316,11 @@
                 <div class="analysis-box">
 
                     <h3>
-                        ⚠️ Recommended Actions
+                        {% if result.prediction == "Phishing" %}
+                            ⚠️ Recommended Safety Actions
+                        {% else %}
+                            ✅ Recommended Actions
+                        {% endif %}
                     </h3>
 
                     {% if result.actions %}

@@ -19,7 +19,9 @@
     <style>
         .ocr-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.2fr) minmax(330px, 0.8fr);
+            grid-template-columns:
+                minmax(0, 1.2fr)
+                minmax(330px, 0.8fr);
             gap: 24px;
             align-items: start;
         }
@@ -28,7 +30,8 @@
             padding: 28px;
             border-radius: 16px;
             background: white;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            box-shadow:
+                0 8px 24px rgba(15, 23, 42, 0.08);
         }
 
         .input-mode-buttons {
@@ -54,14 +57,22 @@
             color: white;
         }
 
-        .content-select {
+        .content-select,
+        .camera-select {
             width: 100%;
-            margin: 8px 0 18px;
             padding: 12px;
             border: 1px solid #94a3b8;
             border-radius: 10px;
             background: white;
             font: inherit;
+        }
+
+        .content-select {
+            margin: 8px 0 18px;
+        }
+
+        .camera-select {
+            margin-bottom: 10px;
         }
 
         .upload-area {
@@ -96,6 +107,7 @@
         }
 
         .selected-file {
+            display: block;
             margin-top: 12px;
             color: #1d4ed8;
             font-weight: 700;
@@ -105,25 +117,100 @@
             display: none;
         }
 
-        .camera-select {
-            width: 100%;
+        .camera-status {
             margin-bottom: 14px;
-            padding: 12px;
-            border: 1px solid #94a3b8;
-            border-radius: 10px;
-            background: white;
-            font: inherit;
+            padding: 10px 12px;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            background: #eff6ff;
+            color: #1e40af;
+            font-size: 14px;
+            font-weight: 700;
         }
 
-        .camera-view,
-        .image-preview {
+        .camera-instructions {
+            margin: 14px 0 0;
+            padding: 12px 14px;
+            border-left: 4px solid #2563eb;
+            border-radius: 8px;
+            background: #eff6ff;
+            color: #334155;
+            line-height: 1.5;
+        }
+
+        .camera-frame {
+            position: relative;
             display: none;
             width: 100%;
-            max-height: 390px;
             margin-top: 18px;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #0f172a;
+        }
+
+        .camera-view {
+            display: block;
+            width: 100%;
+            max-height: 480px;
+            background: #0f172a;
+            object-fit: contain;
+        }
+
+        .capture-guide {
+            position: absolute;
+            top: 10%;
+            right: 5%;
+            bottom: 10%;
+            left: 5%;
+            border: 3px dashed #22c55e;
+            border-radius: 10px;
+            box-shadow:
+                0 0 0 9999px rgba(15, 23, 42, 0.18);
+            pointer-events: none;
+        }
+
+        .capture-guide-label {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.85);
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        .image-preview-container {
+            display: none;
+            margin-top: 18px;
+        }
+
+        .image-preview-heading {
+            margin-bottom: 8px;
+            color: #334155;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .image-preview {
+            display: block;
+            width: 100%;
+            max-height: 480px;
+            border: 2px solid #22c55e;
             border-radius: 12px;
             background: #0f172a;
             object-fit: contain;
+        }
+
+        .preview-message {
+            margin: 10px 0 0;
+            color: #475569;
+            font-size: 14px;
+            line-height: 1.5;
         }
 
         .camera-controls {
@@ -172,7 +259,7 @@
             cursor: pointer;
         }
 
-        .ocr-button:hover {
+        .ocr-button:hover:not(:disabled) {
             background: #1d4ed8;
         }
 
@@ -194,6 +281,7 @@
         .camera-error {
             display: none;
             margin-top: 14px;
+            margin-bottom: 0;
         }
 
         .ocr-confidence {
@@ -260,10 +348,21 @@
         <h2>PhishAI</h2>
 
         <nav>
-            <a href="/">Dashboard</a>
-            <a href="/email-scanner">Email Scanner</a>
-            <a href="/sms-scanner">SMS Scanner</a>
-            <a href="/url-scanner">URL Scanner</a>
+            <a href="/">
+                Dashboard
+            </a>
+
+            <a href="/email-scanner">
+                Email Scanner
+            </a>
+
+            <a href="/sms-scanner">
+                SMS Scanner
+            </a>
+
+            <a href="/url-scanner">
+                URL Scanner
+            </a>
 
             <a
                 class="active"
@@ -272,14 +371,25 @@
                 OCR Scanner
             </a>
 
-            <a href="/history">Detection History</a>
+            <a href="/history">
+                Detection History
+            </a>
+
             <a href="/model-performance">
                 📈 Model Performance
             </a>
 
-            <a href="/awareness">Awareness Centre</a>
-            <a href="/report-scam">Report Scam</a>
-            <a href="/scam-reports">Reported Scams</a>
+            <a href="/awareness">
+                Awareness Centre
+            </a>
+
+            <a href="/report-scam">
+                Report Scam
+            </a>
+
+            <a href="/scam-reports">
+                Reported Scams
+            </a>
         </nav>
 
         <div class="sidebar-user">
@@ -289,8 +399,15 @@
             </div>
 
             <div class="user-details">
-                <strong>{{ session.first_name }}</strong>
-                <small>{{ session.role }}</small>
+
+                <strong>
+                    {{ session.first_name }}
+                </strong>
+
+                <small>
+                    {{ session.role }}
+                </small>
+
             </div>
 
             <a
@@ -309,7 +426,9 @@
 
         <header class="topbar">
 
-            <h1>OCR Threat Scanner</h1>
+            <h1>
+                OCR Threat Scanner
+            </h1>
 
             <span>
                 Capture or upload an SMS, email or URL
@@ -358,6 +477,7 @@
                         class="content-select"
                         required
                     >
+
                         <option
                             value="url"
                             {% if selected_content_type == "url" %}
@@ -384,6 +504,7 @@
                         >
                             Email
                         </option>
+
                     </select>
 
                     <div class="input-mode-buttons">
@@ -443,22 +564,55 @@
                         class="camera-panel"
                     >
 
+                        <label
+                            for="camera-select"
+                            class="result-label"
+                        >
+                            Select physical camera
+                        </label>
+
                         <select
                             id="camera-select"
                             class="camera-select"
                         >
                             <option value="">
-                                Default camera
+                                Loading cameras...
                             </option>
                         </select>
 
-                        <video
-                            id="camera-view"
-                            class="camera-view"
-                            autoplay
-                            playsinline
-                            muted
-                        ></video>
+                        <div
+                            id="active-camera-status"
+                            class="camera-status"
+                        >
+                            No camera active
+                        </div>
+
+                        <div class="camera-instructions">
+                            Position only the message, email or URL
+                            inside the green frame. Keep the camera
+                            straight and wait until the text is clear.
+                        </div>
+
+                        <div
+                            id="camera-frame"
+                            class="camera-frame"
+                        >
+
+                            <video
+                                id="camera-view"
+                                class="camera-view"
+                                autoplay
+                                playsinline
+                                muted
+                            ></video>
+
+                            <div class="capture-guide"></div>
+
+                            <div class="capture-guide-label">
+                                Keep all text inside this frame
+                            </div>
+
+                        </div>
 
                         <canvas
                             id="camera-canvas"
@@ -502,11 +656,28 @@
 
                     </div>
 
-                    <img
-                        id="image-preview"
-                        class="image-preview"
-                        alt="Selected or captured image"
+                    <div
+                        id="image-preview-container"
+                        class="image-preview-container"
                     >
+
+                        <div class="image-preview-heading">
+                            Image that will be sent to OCR
+                        </div>
+
+                        <img
+                            id="image-preview"
+                            class="image-preview"
+                            alt="Selected or captured image"
+                        >
+
+                        <p class="preview-message">
+                            Check that the text is sharp and complete.
+                            If it is blurry or cut off, capture it again
+                            before extracting.
+                        </p>
+
+                    </div>
 
                     <button
                         type="submit"
@@ -523,12 +694,15 @@
 
             <div class="ocr-card">
 
-                <h2>OCR Result</h2>
+                <h2>
+                    OCR Result
+                </h2>
 
                 {% if ocr_result %}
 
                     <p>
                         File:
+
                         <strong>
                             {{ ocr_result.filename }}
                         </strong>
@@ -609,73 +783,128 @@
 
 <script>
     const contentType =
-        document.getElementById("content-type");
+        document.getElementById(
+            "content-type"
+        );
 
     const uploadModeButton =
-        document.getElementById("upload-mode-button");
+        document.getElementById(
+            "upload-mode-button"
+        );
 
     const cameraModeButton =
-        document.getElementById("camera-mode-button");
+        document.getElementById(
+            "camera-mode-button"
+        );
 
     const uploadPanel =
-        document.getElementById("upload-panel");
+        document.getElementById(
+            "upload-panel"
+        );
 
     const cameraPanel =
-        document.getElementById("camera-panel");
+        document.getElementById(
+            "camera-panel"
+        );
 
     const imageInput =
-        document.getElementById("image");
+        document.getElementById(
+            "image"
+        );
 
     const selectedFile =
-        document.getElementById("selected-file");
+        document.getElementById(
+            "selected-file"
+        );
+
+    const imagePreviewContainer =
+        document.getElementById(
+            "image-preview-container"
+        );
 
     const imagePreview =
-        document.getElementById("image-preview");
+        document.getElementById(
+            "image-preview"
+        );
 
     const cameraSelect =
-        document.getElementById("camera-select");
+        document.getElementById(
+            "camera-select"
+        );
+
+    const activeCameraStatus =
+        document.getElementById(
+            "active-camera-status"
+        );
+
+    const cameraFrame =
+        document.getElementById(
+            "camera-frame"
+        );
 
     const cameraView =
-        document.getElementById("camera-view");
+        document.getElementById(
+            "camera-view"
+        );
 
     const cameraCanvas =
-        document.getElementById("camera-canvas");
+        document.getElementById(
+            "camera-canvas"
+        );
 
     const startCameraButton =
-        document.getElementById("start-camera-button");
+        document.getElementById(
+            "start-camera-button"
+        );
 
     const captureButton =
-        document.getElementById("capture-button");
+        document.getElementById(
+            "capture-button"
+        );
 
     const stopCameraButton =
-        document.getElementById("stop-camera-button");
+        document.getElementById(
+            "stop-camera-button"
+        );
 
     const extractButton =
-        document.getElementById("extract-button");
+        document.getElementById(
+            "extract-button"
+        );
 
     const cameraError =
-        document.getElementById("camera-error");
+        document.getElementById(
+            "camera-error"
+        );
 
     let cameraStream = null;
+    let previewObjectUrl = null;
 
 
     function getContentLabel() {
+
         const labels = {
             url: "URL",
             sms: "SMS",
             email: "Email"
         };
 
-        return labels[contentType.value] || "Content";
+        return (
+            labels[contentType.value]
+            || "Content"
+        );
     }
 
 
     function updatePageText() {
-        const label = getContentLabel();
+
+        const label =
+            getContentLabel();
 
         document.getElementById(
             "capture-heading"
-        ).textContent = `Capture ${label} Content`;
+        ).textContent =
+            `Capture ${label} Content`;
 
         extractButton.textContent =
             `Extract ${label}`;
@@ -683,62 +912,167 @@
 
 
     function displayError(message) {
-        cameraError.textContent = message;
-        cameraError.style.display = "block";
+
+        cameraError.textContent =
+            message;
+
+        cameraError.style.display =
+            "block";
     }
 
 
     function clearError() {
-        cameraError.textContent = "";
-        cameraError.style.display = "none";
+
+        cameraError.textContent =
+            "";
+
+        cameraError.style.display =
+            "none";
+    }
+
+
+    function revokePreviewUrl() {
+
+        if (previewObjectUrl) {
+
+            URL.revokeObjectURL(
+                previewObjectUrl
+            );
+
+            previewObjectUrl = null;
+        }
+    }
+
+
+    function clearSelectedImage() {
+
+        revokePreviewUrl();
+
+        imageInput.value =
+            "";
+
+        selectedFile.textContent =
+            "";
+
+        imagePreview.removeAttribute(
+            "src"
+        );
+
+        imagePreviewContainer.style.display =
+            "none";
+
+        extractButton.disabled =
+            true;
     }
 
 
     function stopCamera() {
+
         if (cameraStream) {
+
             cameraStream
                 .getTracks()
-                .forEach(track => track.stop());
+                .forEach(
+                    track => track.stop()
+                );
         }
 
-        cameraStream = null;
-        cameraView.srcObject = null;
-        cameraView.style.display = "none";
+        cameraStream =
+            null;
 
-        captureButton.disabled = true;
-        stopCameraButton.disabled = true;
-        startCameraButton.disabled = false;
+        cameraView.pause();
+
+        cameraView.srcObject =
+            null;
+
+        cameraFrame.style.display =
+            "none";
+
+        captureButton.disabled =
+            true;
+
+        stopCameraButton.disabled =
+            true;
+
+        startCameraButton.disabled =
+            false;
+
+        activeCameraStatus.textContent =
+            "No camera active";
     }
 
 
     function showUploadMode() {
+
         stopCamera();
 
-        uploadPanel.style.display = "block";
-        cameraPanel.style.display = "none";
+        uploadPanel.style.display =
+            "block";
 
-        uploadModeButton.classList.add("active");
-        cameraModeButton.classList.remove("active");
+        cameraPanel.style.display =
+            "none";
+
+        uploadModeButton.classList.add(
+            "active"
+        );
+
+        cameraModeButton.classList.remove(
+            "active"
+        );
+
+        imageInput.required =
+            true;
     }
 
 
     function showCameraMode() {
-        uploadPanel.style.display = "none";
-        cameraPanel.style.display = "block";
 
-        cameraModeButton.classList.add("active");
-        uploadModeButton.classList.remove("active");
+        uploadPanel.style.display =
+            "none";
+
+        cameraPanel.style.display =
+            "block";
+
+        cameraModeButton.classList.add(
+            "active"
+        );
+
+        uploadModeButton.classList.remove(
+            "active"
+        );
+
+        imageInput.required =
+            true;
 
         loadCameraDevices();
     }
 
 
+    async function requestCameraPermission() {
+
+        const temporaryStream =
+            await navigator.mediaDevices
+                .getUserMedia({
+                    video: true,
+                    audio: false
+                });
+
+        temporaryStream
+            .getTracks()
+            .forEach(
+                track => track.stop()
+            );
+    }
+
+
     async function loadCameraDevices() {
+
         clearError();
 
         if (
             !navigator.mediaDevices
-            || !navigator.mediaDevices.enumerateDevices
+            || !navigator.mediaDevices
+                .enumerateDevices
         ) {
             displayError(
                 "This browser does not support camera access."
@@ -748,92 +1082,197 @@
         }
 
         try {
-            const currentDevice =
-                cameraSelect.value;
-
-            const devices =
-                await navigator.mediaDevices.enumerateDevices();
-
-            const videoDevices =
-                devices.filter(
-                    device => device.kind === "videoinput"
+            const savedDeviceId =
+                localStorage.getItem(
+                    "phishaiSelectedCamera"
                 );
 
-            cameraSelect.innerHTML =
-                '<option value="">Default camera</option>';
+            let devices =
+                await navigator.mediaDevices
+                    .enumerateDevices();
 
-            videoDevices.forEach((device, index) => {
+            let videoDevices =
+                devices.filter(
+                    device =>
+                        device.kind ===
+                        "videoinput"
+                );
+
+            const labelsAreMissing =
+                videoDevices.some(
+                    device => !device.label
+                );
+
+            if (labelsAreMissing) {
+
+                await requestCameraPermission();
+
+                devices =
+                    await navigator.mediaDevices
+                        .enumerateDevices();
+
+                videoDevices =
+                    devices.filter(
+                        device =>
+                            device.kind ===
+                            "videoinput"
+                    );
+            }
+
+            cameraSelect.innerHTML =
+                "";
+
+            if (videoDevices.length === 0) {
+
                 const option =
-                    document.createElement("option");
+                    document.createElement(
+                        "option"
+                    );
 
                 option.value =
-                    device.deviceId;
+                    "";
 
                 option.textContent =
-                    device.label
-                    || `Camera ${index + 1}`;
+                    "No camera found";
 
-                if (device.deviceId === currentDevice) {
-                    option.selected = true;
+                cameraSelect.appendChild(
+                    option
+                );
+
+                startCameraButton.disabled =
+                    true;
+
+                activeCameraStatus.textContent =
+                    "No physical camera found";
+
+                return;
+            }
+
+            videoDevices.forEach(
+                (device, index) => {
+
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
+
+                    option.value =
+                        device.deviceId;
+
+                    option.textContent =
+                        device.label
+                        || `Camera ${index + 1}`;
+
+                    cameraSelect.appendChild(
+                        option
+                    );
                 }
+            );
 
-                cameraSelect.appendChild(option);
-            });
+            const savedCameraExists =
+                videoDevices.some(
+                    device =>
+                        device.deviceId ===
+                        savedDeviceId
+                );
+
+            if (savedCameraExists) {
+
+                cameraSelect.value =
+                    savedDeviceId;
+            }
+
+            localStorage.setItem(
+                "phishaiSelectedCamera",
+                cameraSelect.value
+            );
+
+            activeCameraStatus.textContent =
+                "Selected camera: "
+                + cameraSelect.options[
+                    cameraSelect.selectedIndex
+                ].textContent;
+
+            startCameraButton.disabled =
+                false;
 
         } catch (error) {
+
+            console.error(
+                "Camera loading error:",
+                error
+            );
+
             displayError(
-                "The available cameras could not be loaded."
+                "The available cameras could not be loaded. "
+                + "Allow camera permission in your browser."
             );
         }
     }
 
 
     async function startCamera() {
+
         clearError();
+
+        const selectedDeviceId =
+            cameraSelect.value;
+
+        if (!selectedDeviceId) {
+
+            displayError(
+                "Please select a physical camera."
+            );
+
+            return;
+        }
+
         stopCamera();
+        clearSelectedImage();
 
         try {
-            const selectedDevice =
-                cameraSelect.value;
-
-            const videoConstraints =
-                selectedDevice
-                    ? {
-                        deviceId: {
-                            exact: selectedDevice
-                        },
-                        width: {
-                            ideal: 1920
-                        },
-                        height: {
-                            ideal: 1080
-                        }
-                    }
-                    : {
-                        width: {
-                            ideal: 1920
-                        },
-                        height: {
-                            ideal: 1080
-                        }
-                    };
-
             cameraStream =
-                await navigator.mediaDevices.getUserMedia({
-                    video: videoConstraints,
-                    audio: false
-                });
+                await navigator.mediaDevices
+                    .getUserMedia({
+                        video: {
+                            deviceId: {
+                                exact:
+                                    selectedDeviceId
+                            },
+
+                            width: {
+                                ideal: 1920
+                            },
+
+                            height: {
+                                ideal: 1080
+                            },
+
+                            frameRate: {
+                                ideal: 30
+                            }
+                        },
+
+                        audio: false
+                    });
 
             cameraView.srcObject =
                 cameraStream;
 
             await cameraView.play();
 
-            cameraView.style.display =
+            const videoTrack =
+                cameraStream
+                    .getVideoTracks()[0];
+
+            const settings =
+                videoTrack.getSettings();
+
+            cameraFrame.style.display =
                 "block";
 
             captureButton.disabled =
-                false;
+                true;
 
             stopCameraButton.disabled =
                 false;
@@ -841,42 +1280,165 @@
             startCameraButton.disabled =
                 true;
 
-            await loadCameraDevices();
+            const activeCameraName =
+                videoTrack.label
+                || cameraSelect.options[
+                    cameraSelect.selectedIndex
+                ].textContent;
+
+            activeCameraStatus.textContent =
+                "Active camera: "
+                + activeCameraName
+                + " — "
+                + (
+                    settings.width
+                    || cameraView.videoWidth
+                )
+                + " × "
+                + (
+                    settings.height
+                    || cameraView.videoHeight
+                );
+
+            localStorage.setItem(
+                "phishaiSelectedCamera",
+                selectedDeviceId
+            );
+
+            /*
+             * Give the camera time to adjust its exposure
+             * before allowing the user to capture.
+             */
+            setTimeout(
+                function () {
+
+                    if (cameraStream) {
+
+                        captureButton.disabled =
+                            false;
+
+                        captureButton.textContent =
+                            "Capture Image";
+                    }
+                },
+                1500
+            );
+
+            captureButton.textContent =
+                "Preparing Camera...";
 
         } catch (error) {
+
+            console.error(
+                "Camera start error:",
+                error
+            );
+
+            stopCamera();
+
             displayError(
-                "Camera access failed. Check your browser "
-                + "permission and confirm that the webcam "
-                + "is connected."
+                "Camera access failed: "
+                + error.message
+                + ". Close other camera applications "
+                + "and check the browser camera permission."
             );
         }
     }
 
 
     function captureImage() {
+
+        clearError();
+
         if (
             !cameraStream
             || !cameraView.videoWidth
             || !cameraView.videoHeight
         ) {
             displayError(
-                "Start the camera before capturing an image."
+                "Start the camera and wait for "
+                + "the picture to become clear."
             );
 
             return;
         }
 
-        cameraCanvas.width =
+        captureButton.disabled =
+            true;
+
+        const videoWidth =
             cameraView.videoWidth;
 
-        cameraCanvas.height =
+        const videoHeight =
             cameraView.videoHeight;
 
+        /*
+         * These values correspond to the green guide:
+         * 5% removed from the left and right.
+         * 10% removed from the top and bottom.
+         */
+        const sourceX =
+            Math.round(
+                videoWidth * 0.05
+            );
+
+        const sourceY =
+            Math.round(
+                videoHeight * 0.10
+            );
+
+        const sourceWidth =
+            Math.round(
+                videoWidth * 0.90
+            );
+
+        const sourceHeight =
+            Math.round(
+                videoHeight * 0.80
+            );
+
+        /*
+         * Preserve the actual camera resolution.
+         * Avoid enlarging a blurry image artificially.
+         */
+        cameraCanvas.width =
+            sourceWidth;
+
+        cameraCanvas.height =
+            sourceHeight;
+
         const context =
-            cameraCanvas.getContext("2d");
+            cameraCanvas.getContext(
+                "2d",
+                {
+                    alpha: false
+                }
+            );
+
+        context.fillStyle =
+            "#ffffff";
+
+        context.fillRect(
+            0,
+            0,
+            cameraCanvas.width,
+            cameraCanvas.height
+        );
+
+        context.imageSmoothingEnabled =
+            true;
+
+        context.imageSmoothingQuality =
+            "high";
 
         context.drawImage(
             cameraView,
+
+            sourceX,
+            sourceY,
+            sourceWidth,
+            sourceHeight,
+
             0,
             0,
             cameraCanvas.width,
@@ -885,10 +1447,15 @@
 
         cameraCanvas.toBlob(
             function (blob) {
+
                 if (!blob) {
+
                     displayError(
                         "The camera image could not be captured."
                     );
+
+                    captureButton.disabled =
+                        false;
 
                     return;
                 }
@@ -915,10 +1482,17 @@
                 imageInput.files =
                     transfer.files;
 
-                imagePreview.src =
-                    URL.createObjectURL(blob);
+                revokePreviewUrl();
 
-                imagePreview.style.display =
+                previewObjectUrl =
+                    URL.createObjectURL(
+                        blob
+                    );
+
+                imagePreview.src =
+                    previewObjectUrl;
+
+                imagePreviewContainer.style.display =
                     "block";
 
                 selectedFile.textContent =
@@ -929,6 +1503,7 @@
 
                 stopCamera();
             },
+
             "image/png"
         );
     }
@@ -937,29 +1512,31 @@
     imageInput.addEventListener(
         "change",
         function () {
+
             const file =
                 this.files[0];
 
             if (!file) {
-                selectedFile.textContent =
-                    "";
 
-                imagePreview.style.display =
-                    "none";
-
-                extractButton.disabled =
-                    true;
+                clearSelectedImage();
 
                 return;
             }
+
+            revokePreviewUrl();
+
+            previewObjectUrl =
+                URL.createObjectURL(
+                    file
+                );
 
             selectedFile.textContent =
                 file.name;
 
             imagePreview.src =
-                URL.createObjectURL(file);
+                previewObjectUrl;
 
-            imagePreview.style.display =
+            imagePreviewContainer.style.display =
                 "block";
 
             extractButton.disabled =
@@ -970,47 +1547,108 @@
 
     contentType.addEventListener(
         "change",
-        updatePageText
+        function () {
+
+            updatePageText();
+
+            /*
+             * Prevent an image captured for one content
+             * type from being submitted as another type.
+             */
+            clearSelectedImage();
+        }
     );
+
 
     uploadModeButton.addEventListener(
         "click",
         showUploadMode
     );
 
+
     cameraModeButton.addEventListener(
         "click",
         showCameraMode
     );
+
 
     startCameraButton.addEventListener(
         "click",
         startCamera
     );
 
+
     captureButton.addEventListener(
         "click",
         captureImage
     );
+
 
     stopCameraButton.addEventListener(
         "click",
         stopCamera
     );
 
+
     cameraSelect.addEventListener(
         "change",
-        function () {
+        async function () {
+
+            const selectedDeviceId =
+                cameraSelect.value;
+
+            localStorage.setItem(
+                "phishaiSelectedCamera",
+                selectedDeviceId
+            );
+
+            activeCameraStatus.textContent =
+                "Selected camera: "
+                + cameraSelect.options[
+                    cameraSelect.selectedIndex
+                ].textContent;
+
+            /*
+             * If a camera is already running,
+             * immediately switch to the new camera.
+             */
             if (cameraStream) {
-                startCamera();
+
+                await startCamera();
             }
         }
     );
 
+
+    if (
+        navigator.mediaDevices
+        && navigator.mediaDevices
+            .addEventListener
+    ) {
+        navigator.mediaDevices.addEventListener(
+            "devicechange",
+            function () {
+
+                if (
+                    cameraPanel.style.display
+                    !== "none"
+                ) {
+                    loadCameraDevices();
+                }
+            }
+        );
+    }
+
+
     window.addEventListener(
         "beforeunload",
-        stopCamera
+        function () {
+
+            stopCamera();
+            revokePreviewUrl();
+        }
     );
+
 
     updatePageText();
 </script>
