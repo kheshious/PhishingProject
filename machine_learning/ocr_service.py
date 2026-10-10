@@ -1,8 +1,10 @@
 from pathlib import Path
+
 import os
 import re
 import shutil
 import sys
+import time
 
 import cv2
 import numpy as np
@@ -25,15 +27,21 @@ ALLOWED_CONTENT_TYPES = {
 
 def configure_tesseract() -> None:
     """
-    Locate the Tesseract executable on Windows,
-    Linux or Raspberry Pi.
+    Locate Tesseract on Windows, Linux or Raspberry Pi.
     """
 
     configured_path = os.getenv(
-        "TESSERACT_CMD"
-    )
+        "TESSERACT_CMD",
+        "",
+    ).strip()
 
     if configured_path:
+        if not Path(configured_path).exists():
+            raise RuntimeError(
+                "The TESSERACT_CMD path does not exist: "
+                f"{configured_path}"
+            )
+
         pytesseract.pytesseract.tesseract_cmd = (
             configured_path
         )
@@ -60,8 +68,7 @@ def configure_tesseract() -> None:
 
     raise RuntimeError(
         "Tesseract OCR could not be located. "
-        "Install Tesseract or set the TESSERACT_CMD "
-        "environment variable."
+        "Install Tesseract or set TESSERACT_CMD."
     )
 
 
@@ -69,7 +76,7 @@ def load_image(
     image_path: str | Path,
 ) -> np.ndarray:
     """
-    Load an image from a file path.
+    Load an image from disk.
     """
 
     image_path = Path(
@@ -82,7 +89,8 @@ def load_image(
         )
 
     image = cv2.imread(
-        str(image_path)
+        str(image_path),
+        cv2.IMREAD_COLOR,
     )
 
     if image is None:
@@ -97,7 +105,7 @@ def decode_image(
     image_bytes: bytes,
 ) -> np.ndarray:
     """
-    Convert uploaded image bytes into an OpenCV image.
+    Decode an uploaded or webcam-captured image.
     """
 
     if not image_bytes:
@@ -117,8 +125,8 @@ def decode_image(
 
     if image is None:
         raise ValueError(
-            "The uploaded file could not be "
-            "decoded as an image."
+            "The uploaded file could not be decoded "
+            "as an image."
         )
 
     return image
@@ -128,67 +136,83 @@ def resize_for_ocr(
     image: np.ndarray,
 ) -> np.ndarray:
     """
-    Enlarge images containing small text.
-
-    Large images are kept close to their original
-    size to avoid unnecessary processing.
+    Resize an image without making it unnecessarily large.
     """
 
     height, width = image.shape[:2]
 
-    target_width = 1800
+    if width <= 0 or height <= 0:
+        raise ValueError(
+            "The image has invalid dimensions."
+        )
 
-    if width < target_width:
-        scale = target_width / width
-    elif width > 2600:
-        scale = 2600 / width
+    minimum_width = 1200
+    maximum_width = 1600
+
+    if width < minimum_width:
+        scale = minimum_width / width
+
+    elif width > maximum_width:
+        scale = maximum_width / width
+
     else:
-        scale = 1.0
-
-    if scale == 1.0:
         return image.copy()
 
-    resized = cv2.resize(
-        image,
-        None,
-        fx=scale,
-        fy=scale,
-        interpolation=cv2.INTER_CUBIC,
+    new_width = int(
+        width * scale
     )
 
-    return resized
+    new_height = int(
+        height * scale
+    )
+
+    interpolation = (
+        cv2.INTER_CUBIC
+        if scale > 1
+        else cv2.INTER_AREA
+    )
+
+    return cv2.resize(
+        image,
+        (
+            new_width,
+            new_height,
+        ),
+        interpolation=interpolation,
+    )
 
 
 def add_white_border(
     image: np.ndarray,
 ) -> np.ndarray:
     """
-    Add a white border around the image.
-
-    Tesseract performs better when text does not
-    touch the edge of an image.
+    Add a border so text does not touch image edges.
     """
 
     return cv2.copyMakeBorder(
         image,
-        30,
-        30,
-        30,
-        30,
+        20,
+        20,
+        20,
+        20,
         cv2.BORDER_CONSTANT,
         value=255,
     )
 
 
-def create_image_versions(
+def prepare_ocr_images(
     image: np.ndarray,
-) -> list[tuple[str, np.ndarray]]:
+) -> dict[str, np.ndarray]:
     """
-    Produce different versions of the same image.
+    Create one primary and one fallback image.
 
-    Uploaded images and webcam images can have very
-    different lighting, contrast and sharpness. Each
-    version is tested and the best OCR result is kept.
+    Primary:
+        Otsu thresholding, which produced the best
+        result in the SMS test.
+
+    Fallback:
+        Sharpened grayscale for images where thresholding
+        removes useful characters.
     """
 
     resized = resize_for_ocr(
@@ -200,8 +224,6 @@ def create_image_versions(
         cv2.COLOR_BGR2GRAY,
     )
 
-    # Improve local contrast without making the
-    # entire image excessively dark or bright.
     clahe = cv2.createCLAHE(
         clipLimit=2.0,
         tileGridSize=(8, 8),
@@ -211,41 +233,21 @@ def create_image_versions(
         grayscale
     )
 
-    # Remove camera noise while preserving text edges.
-    denoised = cv2.bilateralFilter(
-        contrast,
-        7,
-        50,
-        50,
-    )
-
-    # Sharpen blurred webcam characters.
     blurred = cv2.GaussianBlur(
         contrast,
         (0, 0),
-        sigmaX=2.0,
+        sigmaX=1.5,
     )
 
     sharpened = cv2.addWeighted(
         contrast,
-        1.8,
+        1.6,
         blurred,
-        -0.8,
+        -0.6,
         0,
     )
 
-    # Global threshold works well on clean,
-    # evenly lit backgrounds.
     otsu = cv2.threshold(
-        denoised,
-        0,
-        255,
-        cv2.THRESH_BINARY
-        + cv2.THRESH_OTSU,
-    )[1]
-
-    # Threshold the sharpened image.
-    sharpened_otsu = cv2.threshold(
         sharpened,
         0,
         255,
@@ -253,71 +255,21 @@ def create_image_versions(
         + cv2.THRESH_OTSU,
     )[1]
 
-    # Adaptive threshold helps when a photographed
-    # screen has uneven brightness or glare.
-    adaptive = cv2.adaptiveThreshold(
-        denoised,
-        255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY,
-        41,
-        15,
-    )
-
-    versions = [
-        (
-            "grayscale",
-            add_white_border(
-                grayscale
-            ),
+    return {
+        "otsu": add_white_border(
+            otsu
         ),
-        (
-            "contrast",
-            add_white_border(
-                contrast
-            ),
+        "sharpened": add_white_border(
+            sharpened
         ),
-        (
-            "denoised",
-            add_white_border(
-                denoised
-            ),
-        ),
-        (
-            "sharpened",
-            add_white_border(
-                sharpened
-            ),
-        ),
-        (
-            "otsu",
-            add_white_border(
-                otsu
-            ),
-        ),
-        (
-            "sharpened_otsu",
-            add_white_border(
-                sharpened_otsu
-            ),
-        ),
-        (
-            "adaptive",
-            add_white_border(
-                adaptive
-            ),
-        ),
-    ]
-
-    return versions
+    }
 
 
 def clean_ocr_text(
     text: str,
 ) -> str:
     """
-    Clean Tesseract output while preserving useful
-    line breaks for SMS and email content.
+    Clean OCR output while keeping line breaks.
     """
 
     if not text:
@@ -325,17 +277,17 @@ def clean_ocr_text(
 
     text = text.replace(
         "\x0c",
-        ""
+        "",
     )
 
     text = text.replace(
         "\r\n",
-        "\n"
+        "\n",
     )
 
     text = text.replace(
         "\r",
-        "\n"
+        "\n",
     )
 
     cleaned_lines = []
@@ -361,10 +313,12 @@ def normalise_url_text(
     text: str,
 ) -> str:
     """
-    Correct common spaces and OCR mistakes inside URLs.
+    Fix common OCR spacing errors inside URLs.
     """
 
-    normalised = text.strip()
+    normalised = str(
+        text or ""
+    ).strip()
 
     normalised = re.sub(
         r"https\s*:\s*/\s*/",
@@ -388,15 +342,15 @@ def normalise_url_text(
     )
 
     normalised = re.sub(
-        r"\s*\.\s*com\b",
-        ".com",
+        r"\s*\.\s*co\s*\.\s*za\b",
+        ".co.za",
         normalised,
         flags=re.IGNORECASE,
     )
 
     normalised = re.sub(
-        r"\s*\.\s*co\s*\.\s*za\b",
-        ".co.za",
+        r"\s*\.\s*com\b",
+        ".com",
         normalised,
         flags=re.IGNORECASE,
     )
@@ -428,7 +382,7 @@ def extract_urls(
     text: str,
 ) -> list[str]:
     """
-    Extract complete URLs from OCR text.
+    Extract URLs from OCR text.
     """
 
     normalised_text = normalise_url_text(
@@ -450,23 +404,20 @@ def extract_urls(
 
     detected_urls = []
 
-    for match in url_pattern.findall(
+    for match in url_pattern.finditer(
         normalised_text
     ):
-        cleaned_url = match.strip(
+        cleaned_url = match.group(0).strip(
             " \t\r\n,;!?\"'()[]{}<>"
         )
 
-        # Remove a final full stop only when it appears
-        # to be sentence punctuation.
         cleaned_url = cleaned_url.rstrip(
             "."
         )
 
         if (
             cleaned_url
-            and cleaned_url
-            not in detected_urls
+            and cleaned_url not in detected_urls
         ):
             detected_urls.append(
                 cleaned_url
@@ -475,50 +426,115 @@ def extract_urls(
     return detected_urls
 
 
-def get_page_modes(
-    content_type: str,
-) -> list[int]:
+def build_text_from_ocr_data(
+    ocr_data: dict,
+) -> str:
     """
-    Return suitable Tesseract page-segmentation modes.
+    Build text from image_to_data results.
 
-    URL images usually contain a single line.
-    SMS and email images normally contain multiple lines.
+    This means Tesseract is called only once per attempt.
     """
 
-    content_type = content_type.lower()
+    lines = {}
 
-    if content_type == "url":
-        return [
-            7,
-            8,
-            6,
-            11,
-        ]
+    words = ocr_data.get(
+        "text",
+        [],
+    )
 
-    if content_type in {
-        "sms",
-        "email",
-    }:
-        return [
-            6,
-            3,
-            11,
-            12,
-        ]
+    for index, raw_word in enumerate(words):
+        word = str(
+            raw_word
+        ).strip()
 
-    return [
-        6,
-        3,
-        11,
+        if not word:
+            continue
+
+        line_key = (
+            ocr_data["block_num"][index],
+            ocr_data["par_num"][index],
+            ocr_data["line_num"][index],
+        )
+
+        if line_key not in lines:
+            lines[line_key] = []
+
+        lines[line_key].append(
+            word
+        )
+
+    extracted_lines = [
+        " ".join(line_words)
+        for line_words in lines.values()
+        if line_words
     ]
+
+    return clean_ocr_text(
+        "\n".join(extracted_lines)
+    )
+
+
+def calculate_confidence(
+    ocr_data: dict,
+) -> float:
+    """
+    Calculate average OCR word confidence.
+    """
+
+    valid_confidences = []
+
+    words = ocr_data.get(
+        "text",
+        [],
+    )
+
+    confidences = ocr_data.get(
+        "conf",
+        [],
+    )
+
+    for word, raw_confidence in zip(
+        words,
+        confidences,
+    ):
+        word = str(
+            word
+        ).strip()
+
+        if not word:
+            continue
+
+        try:
+            confidence = float(
+                raw_confidence
+            )
+
+        except (
+            TypeError,
+            ValueError,
+        ):
+            continue
+
+        if confidence >= 0:
+            valid_confidences.append(
+                confidence
+            )
+
+    if not valid_confidences:
+        return 0.0
+
+    return round(
+        sum(valid_confidences)
+        / len(valid_confidences),
+        2,
+    )
 
 
 def calculate_readability(
     text: str,
 ) -> float:
     """
-    Estimate whether OCR output contains readable text
-    rather than mostly random symbols.
+    Calculate how much of the OCR text is readable.
     """
 
     visible_characters = [
@@ -530,20 +546,27 @@ def calculate_readability(
     if not visible_characters:
         return 0.0
 
+    allowed_punctuation = (
+        ".,:;!?@#%&()[]{}'\"/_-+=\\"
+    )
+
     readable_characters = sum(
         1
         for character in visible_characters
         if (
             character.isalnum()
-            or character
-            in ".,:;!?@#%&()[]{}'\"/_-+=\\"
+            or character in allowed_punctuation
         )
     )
 
-    return (
-        readable_characters
-        / len(visible_characters)
-    ) * 100
+    return round(
+        (
+            readable_characters
+            / len(visible_characters)
+        )
+        * 100,
+        2,
+    )
 
 
 def calculate_candidate_score(
@@ -552,11 +575,7 @@ def calculate_candidate_score(
     content_type: str,
 ) -> float:
     """
-    Combine OCR confidence with text readability and
-    useful-content checks.
-
-    This prevents a short but incorrect result from
-    winning only because it has a high confidence.
+    Score an OCR result.
     """
 
     if not text:
@@ -571,21 +590,10 @@ def calculate_candidate_score(
         text,
     )
 
-    alphabetic_words = [
-        word
-        for word in words
-        if any(
-            character.isalpha()
-            for character in word
-        )
-    ]
-
     score = (
-        confidence * 0.65
+        confidence * 0.70
         + readability * 0.20
     )
-
-    content_type = content_type.lower()
 
     if content_type == "url":
         detected_urls = extract_urls(
@@ -593,17 +601,7 @@ def calculate_candidate_score(
         )
 
         if detected_urls:
-            score += 40
-
-            longest_url_length = max(
-                len(url)
-                for url in detected_urls
-            )
-
-            score += min(
-                longest_url_length,
-                80,
-            ) * 0.10
+            score += 45
 
         if "http://" in text.lower():
             score += 8
@@ -615,19 +613,17 @@ def calculate_candidate_score(
             score += 3
 
     else:
-        # Reward candidates that preserve more meaningful
-        # words from an SMS or email.
         score += min(
-            len(alphabetic_words),
+            len(words),
             30,
-        ) * 0.70
+        ) * 0.60
 
         score += min(
             len(text),
             300,
-        ) * 0.025
+        ) * 0.02
 
-        if len(alphabetic_words) < 3:
+        if len(words) < 3:
             score -= 20
 
     return round(
@@ -636,29 +632,19 @@ def calculate_candidate_score(
     )
 
 
-def run_ocr_candidate(
+def run_ocr_attempt(
     processed_image: np.ndarray,
     content_type: str,
     page_mode: int,
+    processing_method: str,
 ) -> dict:
     """
-    Run Tesseract on one image version using one
-    page-segmentation mode.
+    Run one Tesseract attempt.
     """
 
     configuration = (
         f"--oem 3 --psm {page_mode} "
         "-c preserve_interword_spaces=1"
-    )
-
-    extracted_text = pytesseract.image_to_string(
-        processed_image,
-        lang="eng",
-        config=configuration,
-    )
-
-    extracted_text = clean_ocr_text(
-        extracted_text
     )
 
     ocr_data = pytesseract.image_to_data(
@@ -668,55 +654,76 @@ def run_ocr_candidate(
         output_type=Output.DICT,
     )
 
-    valid_confidences = []
+    extracted_text = build_text_from_ocr_data(
+        ocr_data
+    )
 
-    for index, raw_confidence in enumerate(
-        ocr_data["conf"]
-    ):
-        word = str(
-            ocr_data["text"][index]
-        ).strip()
-
-        try:
-            confidence = float(
-                raw_confidence
-            )
-        except (
-            TypeError,
-            ValueError,
-        ):
-            continue
-
-        if word and confidence >= 0:
-            valid_confidences.append(
-                confidence
-            )
-
-    if valid_confidences:
-        average_confidence = (
-            sum(valid_confidences)
-            / len(valid_confidences)
-        )
-    else:
-        average_confidence = 0.0
-
-    average_confidence = round(
-        average_confidence,
-        2,
+    confidence = calculate_confidence(
+        ocr_data
     )
 
     score = calculate_candidate_score(
         extracted_text,
-        average_confidence,
+        confidence,
         content_type,
     )
 
     return {
         "text": extracted_text,
-        "ocr_confidence": average_confidence,
+        "ocr_confidence": confidence,
         "score": score,
+        "processing_method": processing_method,
         "page_mode": page_mode,
     }
+
+
+def result_is_acceptable(
+    candidate: dict,
+    content_type: str,
+) -> bool:
+    """
+    Decide whether the first attempt is good enough.
+
+    A fallback attempt only runs when this returns False.
+    """
+
+    text = candidate.get(
+        "text",
+        "",
+    )
+
+    confidence = float(
+        candidate.get(
+            "ocr_confidence",
+            0,
+        )
+    )
+
+    if not text:
+        return False
+
+    if content_type == "url":
+        return bool(
+            extract_urls(
+                text
+            )
+        )
+
+    words = re.findall(
+        r"[A-Za-z0-9]{2,}",
+        text,
+    )
+
+    readability = calculate_readability(
+        text
+    )
+
+    return (
+        confidence >= 65
+        and readability >= 85
+        and len(words) >= 4
+        and len(text) >= 20
+    )
 
 
 def perform_ocr(
@@ -724,11 +731,13 @@ def perform_ocr(
     content_type: str = "general",
 ) -> dict:
     """
-    Run OCR using multiple preprocessing methods and
-    multiple Tesseract page-segmentation modes.
+    Run balanced OCR.
 
-    The most suitable result is returned.
+    The primary attempt uses Otsu with page mode 6.
+    A second attempt runs only if the first result is poor.
     """
+
+    started_at = time.perf_counter()
 
     configure_tesseract()
 
@@ -739,36 +748,69 @@ def perform_ocr(
     if content_type not in ALLOWED_CONTENT_TYPES:
         content_type = "general"
 
-    image_versions = create_image_versions(
+    prepared_images = prepare_ocr_images(
         image
     )
 
-    page_modes = get_page_modes(
-        content_type
-    )
+    if content_type == "url":
+        primary_method = "otsu"
+        primary_page_mode = 7
+
+        fallback_method = "sharpened"
+        fallback_page_mode = 6
+
+    else:
+        primary_method = "otsu"
+        primary_page_mode = 6
+
+        fallback_method = "sharpened"
+        fallback_page_mode = 11
 
     candidates = []
 
-    for version_name, processed_image in image_versions:
-        for page_mode in page_modes:
-            try:
-                candidate = run_ocr_candidate(
-                    processed_image,
-                    content_type,
-                    page_mode,
+    try:
+        primary_candidate = run_ocr_attempt(
+            prepared_images[primary_method],
+            content_type,
+            primary_page_mode,
+            primary_method,
+        )
+
+        if primary_candidate["text"]:
+            candidates.append(
+                primary_candidate
+            )
+
+    except pytesseract.TesseractError:
+        primary_candidate = None
+
+    if (
+        primary_candidate is None
+        or not result_is_acceptable(
+            primary_candidate,
+            content_type,
+        )
+    ):
+        try:
+            fallback_candidate = run_ocr_attempt(
+                prepared_images[fallback_method],
+                content_type,
+                fallback_page_mode,
+                fallback_method,
+            )
+
+            if fallback_candidate["text"]:
+                candidates.append(
+                    fallback_candidate
                 )
 
-                candidate["processing_method"] = (
-                    version_name
-                )
+        except pytesseract.TesseractError:
+            pass
 
-                if candidate["text"]:
-                    candidates.append(
-                        candidate
-                    )
-
-            except pytesseract.TesseractError:
-                continue
+    processing_seconds = round(
+        time.perf_counter() - started_at,
+        2,
+    )
 
     if not candidates:
         return {
@@ -778,6 +820,8 @@ def perform_ocr(
             "urls": [],
             "processing_method": None,
             "page_mode": None,
+            "processing_seconds": processing_seconds,
+            "ocr_attempts": 0,
         }
 
     best_candidate = max(
@@ -785,36 +829,42 @@ def perform_ocr(
         key=lambda candidate: candidate["score"],
     )
 
-    extracted_text = best_candidate["text"]
+    extracted_text = best_candidate[
+        "text"
+    ]
 
-    detected_urls = []
+    detected_urls = extract_urls(
+        extracted_text
+    )
 
-    if content_type == "url":
-        detected_urls = extract_urls(
-            extracted_text
-        )
+    if (
+        content_type == "url"
+        and detected_urls
+    ):
+        extracted_text = detected_urls[0]
 
-        # When a URL was found, return the normalised URL
-        # as the main extracted text as well.
-        if detected_urls:
-            extracted_text = detected_urls[0]
-
-    result = {
+    return {
         "content_type": content_type,
         "text": extracted_text,
         "ocr_confidence": best_candidate[
             "ocr_confidence"
         ],
-        "urls": detected_urls,
+        "urls": (
+            detected_urls
+            if content_type == "url"
+            else []
+        ),
         "processing_method": best_candidate[
             "processing_method"
         ],
         "page_mode": best_candidate[
             "page_mode"
         ],
+        "processing_seconds": processing_seconds,
+        "ocr_attempts": len(
+            candidates
+        ),
     }
-
-    return result
 
 
 def perform_ocr_from_path(
@@ -840,7 +890,7 @@ def perform_ocr_from_bytes(
     content_type: str = "general",
 ) -> dict:
     """
-    Run OCR on an uploaded or webcam-captured image.
+    Run OCR on an uploaded or webcam image.
     """
 
     image = decode_image(
@@ -862,9 +912,7 @@ if __name__ == "__main__":
 
         raise SystemExit(1)
 
-    selected_image_path = (
-        sys.argv[1]
-    )
+    selected_image_path = sys.argv[1]
 
     selected_content_type = (
         sys.argv[2]
@@ -891,7 +939,19 @@ if __name__ == "__main__":
     )
 
     print(
-        "\nProcessing method:",
+        "Processing time:",
+        f'{ocr_result["processing_seconds"]} seconds',
+    )
+
+    print(
+        "OCR attempts:",
+        ocr_result.get(
+            "ocr_attempts"
+        ),
+    )
+
+    print(
+        "Processing method:",
         ocr_result.get(
             "processing_method"
         ),
@@ -914,6 +974,7 @@ if __name__ == "__main__":
                 print(
                     f"- {detected_url}"
                 )
+
         else:
             print(
                 "- No URL was detected."
