@@ -1,0 +1,912 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Real-Time Email Detection | PhishAI</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .live-page {
+            padding: 25px 0 50px;
+        }
+
+        .live-panel {
+            background: #fff;
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 10px 35px rgba(15, 35, 65, .07);
+        }
+
+        .live-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .live-top h2 {
+            color: #102b50;
+            font-size: 25px;
+            margin: 0;
+        }
+
+        .live-status {
+            background: #f1f5f9;
+            color: #475569;
+            border-radius: 30px;
+            padding: 10px 16px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .live-status.online {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .live-account {
+            margin-top: 25px;
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .live-account small {
+            display: block;
+            color: #64748b;
+            margin-bottom: 7px;
+        }
+
+        .live-account strong {
+            color: #124b94;
+            font-size: 19px;
+            overflow-wrap: anywhere;
+        }
+
+        .live-stage {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 390px;
+            text-align: center;
+            gap: 14px;
+        }
+
+        .live-stage h3 {
+            color: #102b50;
+            font-size: 24px;
+            margin: 8px 0 0;
+        }
+
+        .live-stage p {
+            color: #64748b;
+            margin: 0;
+        }
+
+        .envelope-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 30px;
+            position: relative;
+        }
+
+        .envelope {
+            width: 180px;
+            height: 120px;
+            position: relative;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #1d4ed8, #60a5fa);
+            box-shadow: 0 20px 45px rgba(37, 99, 235, .25);
+            transition: background .4s, box-shadow .4s;
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        .envelope::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 15px;
+            background: #bfdbfe;
+            clip-path: polygon(0 0, 100% 0, 50% 62%);
+        }
+
+        .envelope::after {
+            content: "✓";
+            position: absolute;
+            right: -15px;
+            top: -15px;
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: #16a34a;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .envelope-button.alert .envelope {
+            background: linear-gradient(135deg, #f97316, #ef4444);
+            box-shadow: 0 0 45px rgba(239, 68, 68, .45);
+            animation: flip-alert 1.4s ease-in-out infinite;
+        }
+
+        .envelope-button.alert .envelope::before {
+            background: #fed7aa;
+        }
+
+        .envelope-button.alert .envelope::after {
+            content: "!";
+            background: #dc2626;
+        }
+
+        .envelope-button.alert {
+            cursor: pointer;
+        }
+
+        .envelope-button:disabled {
+            cursor: default;
+        }
+
+        .live-countdown {
+            color: #1766c2;
+            font-size: 48px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .live-progress {
+            width: min(400px, 100%);
+            height: 9px;
+            background: #e2e8f0;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .live-progress-fill {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #1766c2, #38bdf8);
+            transition: width 1s linear;
+        }
+
+        .live-controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .live-btn {
+            border: none;
+            border-radius: 11px;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: inherit;
+        }
+
+        .live-primary {
+            color: white;
+            background: #1766c2;
+        }
+
+        .live-secondary {
+            color: #334155;
+            background: #e2e8f0;
+        }
+
+        .live-btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .live-notice {
+            color: #64748b;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 18px;
+        }
+
+        /* POP-UP */
+
+        .mail-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 18, 38, .76);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 9999;
+        }
+
+        .mail-modal[hidden] {
+            display: none !important;
+        }
+
+        .mail-window {
+            background: white;
+            border-radius: 22px;
+            width: min(850px, 100%);
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 90px rgba(0, 0, 0, .3);
+            animation: modal-appear .35s ease-out;
+        }
+
+        .mail-header {
+            background: #102b50;
+            color: white;
+            padding: 22px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .mail-header h2 {
+            margin: 0;
+            font-size: 21px;
+        }
+
+        .mail-close {
+            border: none;
+            background: rgba(255,255,255,.15);
+            color: white;
+            border-radius: 10px;
+            padding: 10px 14px;
+            cursor: pointer;
+        }
+
+        .mail-content {
+            padding: 28px;
+        }
+
+        .mail-meta {
+            display: grid;
+            grid-template-columns: 90px 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+            overflow-wrap: anywhere;
+        }
+
+        .mail-meta span {
+            color: #64748b;
+        }
+
+        .mail-body {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 20px;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            line-height: 1.7;
+            margin: 25px 0;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        .analysis-title {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 24px;
+            margin-bottom: 20px;
+            color: #102b50;
+        }
+
+        .prediction-result {
+            padding: 18px;
+            border-radius: 13px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .prediction-result.safe {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .prediction-result.danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .analysis-score {
+            background: #f1f5f9;
+            border-radius: 13px;
+            padding: 17px;
+        }
+
+        .analysis-score span {
+            display: block;
+            color: #64748b;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .analysis-score strong {
+            font-size: 23px;
+            color: #102b50;
+        }
+
+        .analysis-explanation {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 18px;
+            margin-top: 20px;
+            color: #334155;
+            line-height: 1.7;
+            overflow-wrap: anywhere;
+        }
+
+        .mail-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes flip-alert {
+            0%, 100% { transform: rotateY(0) scale(1); }
+            40% { transform: rotateY(180deg) scale(1.12); }
+            70% { transform: rotateY(360deg) scale(1); }
+        }
+
+        @keyframes modal-appear {
+            from {
+                opacity: 0;
+                transform: translateY(25px) scale(.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @media (max-width: 650px) {
+            .live-panel { padding: 18px; }
+            .analysis-grid { grid-template-columns: 1fr; }
+            .mail-content { padding: 18px; }
+            .mail-header { padding: 18px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .envelope,
+            .envelope-button.alert .envelope,
+            .mail-window {
+                animation: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="layout">
+
+    <aside class="sidebar">
+        <h2>🛡️ PhishAI</h2>
+
+        <nav>
+            <a href="/">🏠 Dashboard</a>
+            <a href="/email-scanner">📧 Email Scanner</a>
+            <a href="/sms-scanner">💬 SMS Scanner</a>
+            <a href="/url-scanner">🌐 URL Scanner</a>
+            <a href="/ocr-scanner">📷 OCR Scanner</a>
+            <a href="/realtime-email-detection" class="active">
+                📡 Real-Time Detection
+            </a>
+            <a href="/history">📊 Detection History</a>
+            <a href="/model-performance">📈 Model Performance</a>
+            <a href="/awareness">🧠 Awareness Centre</a>
+            <a href="/report-scam">🚩 Report Scam</a>
+            <a href="/scam-reports">📋 Reported Scams</a>
+            <a href="#">⚙️ Settings</a>
+        </nav>
+
+        <div class="sidebar-user">
+            <div class="user-avatar">
+                {{ session.first_name[0]|upper }}
+            </div>
+
+            <div class="user-details">
+                <strong>{{ session.first_name }}</strong>
+                <small>{{ session.role }}</small>
+            </div>
+
+            <a href="/logout"
+               class="logout-button"
+               title="Logout">↪</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="topbar">
+            <h1>Real-Time Email Detection</h1>
+            <span>PhishAI Live Inbox Guardian</span>
+        </header>
+
+        <section class="live-page">
+            <div class="live-panel">
+
+                <div class="live-top">
+                    <h2>📨 Live Gmail Monitor</h2>
+                    <span class="live-status" id="monitorStatus">
+                        Connecting...
+                    </span>
+                </div>
+
+                <div class="live-account">
+                    <small>MONITORED EMAIL ACCOUNT</small>
+                    <strong id="monitoredEmail">
+                        Waiting for Gmail connection
+                    </strong>
+                </div>
+
+                <div class="live-stage">
+
+                    <button
+                        type="button"
+                        class="envelope-button"
+                        id="envelopeButton"
+                        aria-label="Open new detected email"
+                        disabled
+                    >
+                        <div class="envelope"></div>
+                    </button>
+
+                    <h3 id="stageTitle">
+                        Waiting for new email
+                    </h3>
+
+                    <p id="stageDescription">
+                        New detections will appear here.
+                    </p>
+
+                    <div class="live-countdown" id="countdown">
+                        --:--
+                    </div>
+
+                    <div class="live-progress">
+                        <div class="live-progress-fill"
+                             id="progressFill"></div>
+                    </div>
+
+                    <div class="live-controls">
+                        <button
+                            class="live-btn live-primary"
+                            id="openButton"
+                            disabled
+                        >
+                            Open Email
+                        </button>
+
+                        <button
+                            class="live-btn live-secondary"
+                            id="soundButton"
+                        >
+                            🔔 Sound: On
+                        </button>
+                    </div>
+
+                </div>
+
+                <p class="live-notice" id="monitorMessage">
+                    Waiting for monitoring status...
+                </p>
+
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- EMAIL POP-UP -->
+
+<div class="mail-modal" id="emailModal" hidden>
+
+    <div class="mail-window"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="modalTitle">
+
+        <div class="mail-header">
+            <h2 id="modalTitle">📧 Detected Email</h2>
+
+            <button class="mail-close" id="modalClose">
+                ✕ Close
+            </button>
+        </div>
+
+        <div class="mail-content">
+
+            <div class="mail-meta">
+                <span>From</span>
+                <strong id="emailSender"></strong>
+            </div>
+
+            <div class="mail-meta">
+                <span>Subject</span>
+                <strong id="emailSubject"></strong>
+            </div>
+
+            <div class="mail-meta">
+                <span>Date</span>
+                <strong id="emailDate"></strong>
+            </div>
+
+            <div class="mail-body" id="emailBody"></div>
+
+            <h3 class="analysis-title">
+                🛡️ PhishAI Security Analysis
+            </h3>
+
+            <div class="prediction-result" id="predictionResult">
+            </div>
+
+            <div class="analysis-grid">
+
+                <div class="analysis-score">
+                    <span>Model Confidence</span>
+                    <strong id="confidenceScore">--</strong>
+                </div>
+
+                <div class="analysis-score">
+                    <span>Phishing Probability</span>
+                    <strong id="phishingScore">--</strong>
+                </div>
+
+                <div class="analysis-score">
+                    <span>Legitimate Probability</span>
+                    <strong id="legitimateScore">--</strong>
+                </div>
+
+            </div>
+
+            <div class="analysis-explanation">
+                <strong>Risk Level:</strong>
+                <span id="riskLevel"></span>
+
+                <p id="emailExplanation"></p>
+            </div>
+
+            <div class="mail-footer">
+                <button class="live-btn live-secondary"
+                        id="closeReport">
+                    Close
+                </button>
+
+                <a href="/history"
+                   class="live-btn live-primary"
+                   style="text-decoration:none">
+                    View Detection History
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    const status = document.getElementById("monitorStatus");
+    const account = document.getElementById("monitoredEmail");
+    const countdown = document.getElementById("countdown");
+    const progress = document.getElementById("progressFill");
+    const envelope = document.getElementById("envelopeButton");
+    const openButton = document.getElementById("openButton");
+    const soundButton = document.getElementById("soundButton");
+    const modal = document.getElementById("emailModal");
+
+    let soundEnabled = true;
+    let pendingEmails = [];
+    let activeEmail = null;
+    let lastCountdownTarget = null;
+    let monitorOnline = false;
+    let audioContext = null;
+
+    function playNotification() {
+        if (!soundEnabled) return;
+
+        try {
+            const AudioContextClass =
+                window.AudioContext || window.webkitAudioContext;
+
+            if (!AudioContextClass) return;
+
+            if (!audioContext) {
+                audioContext = new AudioContextClass();
+            }
+
+            if (audioContext.state === "suspended") {
+                audioContext.resume();
+            }
+
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            oscillator.type = "sine";
+            oscillator.frequency.setValueAtTime(
+                700, audioContext.currentTime
+            );
+            oscillator.frequency.exponentialRampToValueAtTime(
+                950, audioContext.currentTime + .18
+            );
+
+            gain.gain.setValueAtTime(
+                .0001, audioContext.currentTime
+            );
+            gain.gain.exponentialRampToValueAtTime(
+                .12, audioContext.currentTime + .03
+            );
+            gain.gain.exponentialRampToValueAtTime(
+                .0001, audioContext.currentTime + .3
+            );
+
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + .31);
+
+        } catch (error) {
+            console.warn("Notification sound unavailable:", error);
+        }
+    }
+
+    function updateEnvelope() {
+        const hasEmail = pendingEmails.length > 0;
+
+        envelope.classList.toggle("alert", hasEmail);
+        envelope.disabled = !hasEmail;
+        openButton.disabled = !hasEmail;
+
+        document.getElementById("stageTitle").textContent =
+            hasEmail
+                ? "New Email Detected!"
+                : "Waiting for new email";
+
+        document.getElementById("stageDescription").textContent =
+            hasEmail
+                ? pendingEmails.length + " email alert(s) waiting"
+                : "Your inbox is being checked automatically.";
+    }
+
+    function displayEmail(email) {
+        activeEmail = email;
+
+        const setText = (id, value) => {
+            document.getElementById(id).textContent =
+                String(value ?? "Not available");
+        };
+
+        setText("emailSender", email.sender);
+        setText("emailSubject", email.subject);
+        setText("emailDate", email.date);
+        setText("emailBody", email.body);
+
+        const prediction = email.prediction || "Unknown";
+        const risk = email.risk || "Unknown";
+
+        const result = document.getElementById("predictionResult");
+
+        result.textContent = prediction + " • " + risk + " Risk";
+        result.className = "prediction-result";
+
+        if (prediction.toLowerCase() === "phishing") {
+            result.classList.add("danger");
+        } else if (prediction.toLowerCase() === "legitimate") {
+            result.classList.add("safe");
+        }
+
+        function formatScore(value) {
+            return value == null || !Number.isFinite(Number(value))
+                ? "Not available"
+                : Number(value).toFixed(2) + "%";
+        }
+
+        setText("confidenceScore",
+            formatScore(email.confidence));
+
+        setText("phishingScore",
+            formatScore(email.phishing_probability));
+
+        setText("legitimateScore",
+            formatScore(email.legitimate_probability));
+
+        setText("riskLevel", risk);
+        setText("emailExplanation", email.explanation || "");
+
+        modal.hidden = false;
+        document.body.style.overflow = "hidden";
+    }
+
+    async function openNextEmail() {
+        if (!pendingEmails.length) return;
+
+        const email = pendingEmails[0];
+
+        try {
+            const response = await fetch(
+                "/api/realtime-email/view",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        detection_id: email.detection_id
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Could not mark email as viewed");
+            }
+
+            pendingEmails.shift();
+            updateEnvelope();
+            displayEmail(email);
+
+        } catch (error) {
+            document.getElementById("monitorMessage").textContent =
+                "Unable to open detection. Please try again.";
+        }
+    }
+
+    function closeModal() {
+        modal.hidden = true;
+        document.body.style.overflow = "";
+        activeEmail = null;
+    }
+
+    function updateCountdown() {
+        if (!monitorOnline || !lastCountdownTarget) {
+            countdown.textContent = "--:--";
+            progress.style.width = "0%";
+            return;
+        }
+
+        const remaining = Math.max(
+            0,
+            Math.ceil((lastCountdownTarget - Date.now()) / 1000)
+        );
+
+        countdown.textContent =
+            "00:" + String(remaining).padStart(2, "0");
+
+        progress.style.width =
+            (remaining / 30 * 100) + "%";
+    }
+
+    async function fetchMonitorStatus() {
+        try {
+            const response = await fetch(
+                "/api/realtime-email/status",
+                { cache: "no-store" }
+            );
+
+            if (!response.ok) {
+                throw new Error("Monitoring API unavailable");
+            }
+
+            const data = await response.json();
+
+            monitorOnline = Boolean(data.monitoring);
+
+            account.textContent =
+                data.account || "Gmail not connected";
+
+            status.textContent =
+                monitorOnline ? "● Monitoring" : "● Offline";
+
+            status.classList.toggle("online", monitorOnline);
+
+            document.getElementById("monitorMessage").textContent =
+                data.message || "";
+
+            lastCountdownTarget =
+                data.next_check_at
+                    ? new Date(data.next_check_at).getTime()
+                    : null;
+
+            const previousIds = new Set(
+                pendingEmails.map(email => email.detection_id)
+            );
+
+            const newEmails = Array.isArray(data.pending_emails)
+                ? data.pending_emails
+                : [];
+
+            if (newEmails.some(
+                email => !previousIds.has(email.detection_id)
+            )) {
+                playNotification();
+            }
+
+            pendingEmails = newEmails;
+            updateEnvelope();
+            updateCountdown();
+
+        } catch (error) {
+            monitorOnline = false;
+            status.textContent = "● Offline";
+            status.classList.remove("online");
+
+            document.getElementById("monitorMessage").textContent =
+                "Live monitoring connection is unavailable.";
+
+            lastCountdownTarget = null;
+            updateCountdown();
+        }
+    }
+
+    envelope.addEventListener("click", openNextEmail);
+    openButton.addEventListener("click", openNextEmail);
+
+    document.getElementById("modalClose")
+        .addEventListener("click", closeModal);
+
+    document.getElementById("closeReport")
+        .addEventListener("click", closeModal);
+
+    soundButton.addEventListener("click", async () => {
+        soundEnabled = !soundEnabled;
+
+        soundButton.textContent = soundEnabled
+            ? "🔔 Sound: On"
+            : "🔕 Sound: Off";
+
+        if (soundEnabled) {
+            playNotification();
+        }
+    });
+
+    modal.addEventListener("click", event => {
+        if (event.target === modal) closeModal();
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !modal.hidden) {
+            closeModal();
+        }
+    });
+
+    updateEnvelope();
+    updateCountdown();
+    fetchMonitorStatus();
+
+    setInterval(updateCountdown, 1000);
+    setInterval(fetchMonitorStatus, 3000);
+});
+</script>
+
+</body>
+</html>

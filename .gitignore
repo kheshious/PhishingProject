@@ -1,5 +1,7 @@
+# Datasets
 datasets/
 
+# Python environments
 .venv/
 venv/
 env/
@@ -7,32 +9,47 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Environment secrets
 .env
 .env.*
 !.env.example
 
+# IDE settings
 .vscode/
 .idea/
 
+# Operating system files
 .DS_Store
 Thumbs.db
 
+# Temporary files
 *.log
 *.tmp
 temp/
 tmp/
 
+# Local databases
 *.db
 *.sqlite
 *.sqlite3
 
+# Cache and notebooks
 .cache/
 .ipynb_checkpoints/
 
+# Testing
 .pytest_cache/
 .coverage
 htmlcov/
 
+# Build files
 build/
 dist/
 *.egg-info/
+
+# Gmail authentication and runtime files
+gmail_integration/credentials.json
+gmail_integration/token.json
+gmail_integration/gmail_monitor_state.json
+gmail_integration/gmail_monitor_status.json
+gmail_integration/*.tmp

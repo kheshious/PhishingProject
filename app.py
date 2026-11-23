@@ -12,7 +12,11 @@ from functools import wraps
 import os
 import sys
 import csv
+import json
 
+from flask import jsonify, request
+from datetime import datetime, timezone
+from pathlib import Path
 from pathlib import Path
 from machine_learning.ocr_service import perform_ocr_from_bytes
 from email_service import send_report_review_email
@@ -1569,6 +1573,331 @@ def ocr_scanner():
         error_message=error_message,
         selected_content_type=selected_content_type,
     )
+
+
+# ============================================================
+# REAL-TIME EMAIL DETECTION PAGE
+# ============================================================
+
+@app.route("/realtime-email-detection")
+@user_required
+def realtime_email_detection():
+    return render_template(
+        "realtime_email_detection.html"
+    )
+
+
+# ============================================================
+# REAL-TIME EMAIL MONITORING API
+# ============================================================
+
+GMAIL_INTEGRATION_DIR = (
+    Path(__file__).resolve().parent / "gmail_integration"
+)
+
+GMAIL_MONITOR_STATUS_FILE = (
+    GMAIL_INTEGRATION_DIR / "gmail_monitor_status.json"
+)
+
+
+@app.route("/api/realtime-email/status", methods=["GET"])
+@user_required
+def realtime_email_status():
+
+    user_id = session.get("user_id")
+
+    # Only the linked PhishAI user can access Gmail alerts.
+    if str(user_id) != "1":
+        return jsonify({
+            "monitoring": False,
+            "account": None,
+            "next_check_at": None,
+            "pending_emails": [],
+            "message": "No Gmail account is linked to this user."
+        })
+
+    monitoring = False
+    account = None
+    next_check_at = None
+    pending_emails = []
+
+    message = "Gmail monitor is not running."
+
+    # ========================================================
+    # READ GMAIL MONITOR STATUS
+    # ========================================================
+
+    if GMAIL_MONITOR_STATUS_FILE.exists():
+
+        try:
+
+            status_data = json.loads(
+                GMAIL_MONITOR_STATUS_FILE.read_text(
+                    encoding="utf-8"
+                )
+            )
+
+            updated_at = datetime.fromisoformat(
+                status_data["updated_at"]
+            )
+
+            if updated_at.tzinfo is None:
+                updated_at = updated_at.replace(
+                    tzinfo=timezone.utc
+                )
+
+            age = (
+                datetime.now(timezone.utc) - updated_at
+            ).total_seconds()
+
+            monitoring = 0 <= age < 75
+
+            account = status_data.get("account")
+
+            if monitoring:
+
+                next_check_at = status_data.get(
+                    "next_check_at"
+                )
+
+                message = "Monitoring Gmail every 30 seconds."
+
+        except (ValueError, KeyError, TypeError, OSError):
+            pass
+
+    # ========================================================
+    # RETRIEVE UNVIEWED GMAIL DETECTIONS
+    # ========================================================
+
+    conn = None
+    cursor = None
+
+    try:
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                d.detection_id,
+                g.gmail_message_id,
+                g.sender,
+                g.subject,
+                g.email_date,
+                d.submitted_content,
+                d.prediction,
+                d.confidence_score,
+                g.phishing_probability,
+                g.legitimate_probability,
+                d.risk_level,
+                d.explanation,
+                g.recommended_actions
+
+            FROM gmail_detection_tracking g
+
+            INNER JOIN detections d
+                ON g.detection_id = d.detection_id
+                AND g.user_id = d.user_id
+
+            WHERE g.user_id = %s
+              AND g.viewed_at IS NULL
+              AND g.sender IS NOT NULL
+
+            ORDER BY d.detection_id ASC
+            """,
+            (user_id,)
+        )
+
+        rows = cursor.fetchall()
+
+        for row in rows:
+
+            try:
+                recommended_actions = json.loads(
+                    row[12] or "[]"
+                )
+            except (ValueError, TypeError):
+                recommended_actions = []
+
+            pending_emails.append({
+                "detection_id": int(row[0]),
+                "gmail_message_id": row[1],
+                "sender": row[2],
+                "subject": row[3],
+                "date": row[4],
+                "body": row[5],
+                "prediction": row[6],
+
+                "confidence": (
+                    float(row[7])
+                    if row[7] is not None
+                    else None
+                ),
+
+                "phishing_probability": (
+                    float(row[8])
+                    if row[8] is not None
+                    else None
+                ),
+
+                "legitimate_probability": (
+                    float(row[9])
+                    if row[9] is not None
+                    else None
+                ),
+
+                "risk": row[10],
+                "explanation": row[11],
+                "recommended_actions": recommended_actions
+            })
+
+    except Exception:
+
+        app.logger.exception(
+            "Unable to retrieve Gmail notifications"
+        )
+
+        return jsonify({
+            "error": "Unable to retrieve Gmail notifications."
+        }), 500
+
+    finally:
+
+        if cursor is not None:
+            cursor.close()
+
+        if conn is not None:
+            conn.close()
+
+    # ========================================================
+    # RETURN STATUS AND PENDING EMAILS TO WEBSITE
+    # ========================================================
+
+    response = jsonify({
+        "monitoring": monitoring,
+        "account": account,
+        "next_check_at": next_check_at,
+        "pending_emails": pending_emails,
+        "message": message
+    })
+
+    response.headers["Cache-Control"] = "no-store"
+
+    return response
+
+
+# ============================================================
+# MARK GMAIL NOTIFICATION AS VIEWED
+# ============================================================
+
+@app.route("/api/realtime-email/view", methods=["POST"])
+@user_required
+def realtime_email_view():
+
+    user_id = session.get("user_id")
+
+    if str(user_id) != "1":
+        return jsonify({
+            "error": "Access denied"
+        }), 403
+
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({
+            "error": "Invalid request."
+        }), 400
+
+    detection_id = data.get("detection_id")
+
+    if type(detection_id) is not int or detection_id <= 0:
+        return jsonify({
+            "error": "Invalid detection ID."
+        }), 400
+
+    conn = None
+    cursor = None
+
+    try:
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Confirm the detection belongs to this user.
+
+        cursor.execute(
+            """
+            SELECT g.detection_id
+            FROM gmail_detection_tracking g
+
+            INNER JOIN detections d
+                ON g.detection_id = d.detection_id
+                AND g.user_id = d.user_id
+
+            WHERE g.detection_id = %s
+              AND g.user_id = %s
+            """,
+            (
+                detection_id,
+                user_id
+            )
+        )
+
+        if cursor.fetchone() is None:
+
+            return jsonify({
+                "error": "Gmail detection not found."
+            }), 404
+
+        # Mark the notification as viewed.
+        # The detection remains in Detection History.
+
+        cursor.execute(
+            """
+            UPDATE gmail_detection_tracking
+
+            SET viewed_at = NOW()
+
+            WHERE detection_id = %s
+              AND user_id = %s
+              AND viewed_at IS NULL
+            """,
+            (
+                detection_id,
+                user_id
+            )
+        )
+
+        conn.commit()
+
+        return jsonify({
+            "success": True,
+            "detection_id": detection_id,
+            "message": "Email marked as viewed."
+        })
+
+    except Exception:
+
+        if conn is not None:
+            conn.rollback()
+
+        app.logger.exception(
+            "Unable to mark Gmail notification as viewed"
+        )
+
+        return jsonify({
+            "error": "Unable to mark email as viewed."
+        }), 500
+
+    finally:
+
+        if cursor is not None:
+            cursor.close()
+
+        if conn is not None:
+            conn.close()
+
 
 @app.route("/history")
 @user_required
@@ -3885,7 +4214,88 @@ def model_performance():
     )
 
 
+
+# ============================================================
+# PHISHAI APPLICATION STARTUP
+# Automatically starts Gmail monitoring with Flask
+# ============================================================
+
 if __name__ == "__main__":
-    app.run(
-        debug=True
+
+    import sys
+    import subprocess
+    import atexit
+    from pathlib import Path
+
+    PROJECT_DIR = Path(__file__).resolve().parent
+
+    GMAIL_MONITOR_SCRIPT = (
+        PROJECT_DIR
+        / "gmail_integration"
+        / "gmail_monitor.py"
     )
+
+    gmail_process = None
+
+    def stop_gmail_monitor():
+        global gmail_process
+
+        if gmail_process is not None:
+            if gmail_process.poll() is None:
+                print("\nStopping Gmail monitor...")
+                gmail_process.terminate()
+
+                try:
+                    gmail_process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    gmail_process.kill()
+                    gmail_process.wait()
+
+            gmail_process = None
+
+    def start_gmail_monitor():
+        global gmail_process
+
+        if not GMAIL_MONITOR_SCRIPT.exists():
+            print(
+                "WARNING: Gmail monitor script not found:",
+                GMAIL_MONITOR_SCRIPT
+            )
+            return
+
+        if gmail_process is not None:
+            if gmail_process.poll() is None:
+                return
+
+        print("\nStarting PhishAI Gmail monitor automatically...")
+
+        gmail_process = subprocess.Popen(
+            [
+                sys.executable,
+                str(GMAIL_MONITOR_SCRIPT)
+            ],
+            cwd=str(PROJECT_DIR)
+        )
+
+        print(
+            "Gmail monitor started. PID:",
+            gmail_process.pid
+        )
+
+    # Prevent Flask debug mode from starting
+    # duplicate Gmail monitoring processes.
+
+    start_gmail_monitor()
+
+    atexit.register(stop_gmail_monitor)
+
+    try:
+        app.run(
+            host="0.0.0.0",
+            port=5000,
+            debug=True,
+            use_reloader=False
+        )
+
+    finally:
+        stop_gmail_monitor()
